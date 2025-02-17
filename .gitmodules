@@ -1,0 +1,3 @@
+[submodule "typing_test/backend/game/text_gen/text_gen"]
+	path = typing_test/backend/game/text_gen/text_gen
+	url = https://github.com/ItsMeSamey/text_gen
