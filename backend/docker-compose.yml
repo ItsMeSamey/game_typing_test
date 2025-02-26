@@ -1,0 +1,15 @@
+services:
+  backend:
+    image: game/typing_test
+    volumes:
+      - ./logs:/app/logs
+    build:
+      context: .
+      dockerfile: ./dockerfile
+    ports:
+      - "8080:8080"
+    restart: always
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536

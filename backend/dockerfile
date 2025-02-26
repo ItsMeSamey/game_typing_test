@@ -1,0 +1,9 @@
+FROM centos:latest
+
+WORKDIR /app
+
+COPY ./dist/main .
+COPY .env .
+EXPOSE 8080
+
+CMD ./main > logs/stdout.log 2> logs/stderr.log
