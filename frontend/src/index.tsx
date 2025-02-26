@@ -22,7 +22,7 @@ render(function() {
 
     <ErrorBoundary fallback={ErrorPage}>
       <Switch fallback={ErrorPage(NoPageError.err, NoPageError.reset)}>
-        <Match when={selectP(Page.Wordle)}>
+        <Match when={selectP(Page.TypingTest)}>
           <Wordle />
         </Match>
       </Switch>
