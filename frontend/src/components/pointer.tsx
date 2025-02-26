@@ -1,4 +1,4 @@
-import { onCleanup, onMount } from "solid-js"
+import { onCleanup, onMount } from 'solid-js'
 
 import '../css/components/pointer.css'
 
