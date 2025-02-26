@@ -13,7 +13,6 @@
     "@kobalte/core": "^0.13.9",
     "@tailwindcss/vite": "^4.0.8",
     "@types/node": "^22.13.5",
-    "binary-search-bounds": "^2.0.5",
     "class-variance-authority": "^0.7.1",
     "idb": "^8.0.2",
     "solid-js": "^1.9.5",
