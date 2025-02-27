@@ -15,18 +15,23 @@ const StringStruct = extern struct {
   }
 };
 
-const GenWords = @import("text_gen/src/genWords.zig");
-const genWordAlpha = GenWords.GetWordGen(.{.defaultData = @embedFile("./text_gen/src/data/words.txt")});
-const genWordNonAlpha = GenWords.GetWordGen(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
-const genSentence = GenWords.GetWordGen(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
+const GenWords = @import("text_gen/src/genWords.zig").GetComptimeWordGen;
+const GenWordAlpha = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words.txt")});
+const GenWordNonAlpha = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
+const GenSentence = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
 
 const GenMarkov = @import("text_gen/src/genMarkov.zig");
+
 var char_markov: GenMarkov.AnyMarkovGen = undefined;
 var word_markov: GenMarkov.AnyMarkovGen = undefined;
 
+fn getWordAlpha() GenWordAlpha { return .{.state = undefined, .data = undefined}; }
+fn getWordNonAlpha() GenWordNonAlpha { return .{.state = undefined, .data = undefined}; }
+fn getSentence() GenSentence { return .{.state = undefined, .data = undefined}; }
+fn getMarkovChar() GenMarkov.AnyMarkovGen { return char_markov.dupe(); }
+fn getMarkovWord() GenMarkov.AnyMarkovGen { return word_markov.dupe(); }
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
-
 
 /// This must be called before any other function in this library,
 /// Calls to any other function before calling init are UB
