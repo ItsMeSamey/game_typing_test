@@ -369,7 +369,7 @@ func main() {
   }
 
   tempDir := os.TempDir()
-  tempLibPath := path.Join(tempDir, "2025_ccs_prob_game_build_cache", "libgen.a")
+  tempLibPath := path.Join(tempDir, "2025_game_typing_test_build_cache", "libgen.a")
   if _, err = os.Stat(tempLibPath); err == nil {
     err = copyFile(tempLibPath, "libgen.a")
     if err != nil {
