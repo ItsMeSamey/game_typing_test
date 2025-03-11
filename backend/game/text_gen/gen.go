@@ -21,6 +21,7 @@ package textgen
 import "C"
 import "unsafe"
 
+// Magic init
 func init() { Init() }
 
 // Init initializes the text generation library.
@@ -48,8 +49,18 @@ func (s StringStruct) Free() {
   C.freeString(C.StringStruct{ptr: s.Ptr, len: C.uint32_t(s.Len), cap: C.uint32_t(s.Cap)})
 }
 
+type IdType uint8
+
+const (
+  IdWordsAlpha = IdType(0)
+  IdWordsNonAlpha = IdType(1)
+  IdSentence = IdType(2)
+  IdCharMarkov = IdType(3)
+  IdWordMarkov = IdType(4)
+)
+
 // generates a string of random words.
-func genN(state *uint32, n uint16, id uint8) StringStruct {
+func GenN(state *uint32, n uint16, id IdType) StringStruct {
   str := C.genN((*C.uint32_t)(state), C.uint16_t(n), C.uint8_t(id))
   return StringStruct{Ptr: str.ptr, Len: uint32(str.len), Cap: uint32(str.cap)}
 }
