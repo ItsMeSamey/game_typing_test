@@ -5,7 +5,7 @@ import { Timer } from '../utils/timer'
 import { Page, setPageError } from '../utils/navigation'
 import { showServerError } from '../utils/toast'
 import LoadingScreen from '../pages/loading_screen'
-import { Keyboard } from './keyboard'
+import Keyboard from './keyboard'
 
 enum State {
   correct,

@@ -1,7 +1,6 @@
 import { JSX, onCleanup, onMount } from "solid-js"
 
-
-export function Keyboard(): JSX.Element {
+export default function Keyboard(): JSX.Element {
   let keyboardRef: SVGSVGElement = undefined as any
   
   function elementByCode(code: string) {
