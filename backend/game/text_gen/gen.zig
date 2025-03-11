@@ -25,11 +25,15 @@ const GenMarkov = @import("text_gen/src/genMarkov.zig");
 var char_markov: GenMarkov.AnyMarkovGen = undefined;
 var word_markov: GenMarkov.AnyMarkovGen = undefined;
 
-fn getWordAlpha() GenWordAlpha { return .{.state = undefined, .data = undefined}; }
-fn getWordNonAlpha() GenWordNonAlpha { return .{.state = undefined, .data = undefined}; }
-fn getSentence() GenSentence { return .{.state = undefined, .data = undefined}; }
+fn getWordAlpha() GenWordAlpha { return .{.state = .{.random = newRandom()}, .data = .{}}; }
+fn getWordNonAlpha() GenWordNonAlpha { return .{.state = .{}, .data = .{}}; }
+fn getSentence() GenSentence { return .{.state = .{}, .data = .{}}; }
 fn getMarkovChar() GenMarkov.AnyMarkovGen { return char_markov.dupe(); }
 fn getMarkovWord() GenMarkov.AnyMarkovGen { return word_markov.dupe(); }
+
+fn newRandom() std.Random {
+  return std.Random.DefaultPrng.init(0);
+}
 
 var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
 
