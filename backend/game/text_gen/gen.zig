@@ -26,7 +26,7 @@ const StringStruct = extern struct {
 const GenWords = @import("text_gen/src/genWords.zig").GetComptimeWordGen;
 const GenWordAlpha = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words.txt")});
 const GenWordNonAlpha = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
-const GenSentence = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/words_non_alpha.txt")});
+const GenSentence = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/sentences.txt")});
 
 const GenMarkov = @import("text_gen/src/genMarkov.zig");
 
