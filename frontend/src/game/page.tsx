@@ -1,3 +1,5 @@
+'use strict'
+
 import { For, onCleanup, onMount, createSignal, createEffect, Show } from 'solid-js'
 import { createStore } from 'solid-js/store'
 

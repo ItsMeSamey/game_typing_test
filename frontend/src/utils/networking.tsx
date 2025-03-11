@@ -1,3 +1,5 @@
+'use strict'
+
 const site = 'http://localhost:8080'
 const wssite = site.replace('http', 'ws')
 

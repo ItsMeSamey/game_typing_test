@@ -1,3 +1,5 @@
+'use strict'
+
 import { JSX, onCleanup, onMount } from "solid-js"
 
 export default function Keyboard(): JSX.Element {

@@ -1,3 +1,5 @@
+'use strict'
+
 /* @refresh reload */
 import { render } from 'solid-js/web'
 import { ColorModeProvider, ColorModeScript, createLocalStorageManager } from '@kobalte/core'
