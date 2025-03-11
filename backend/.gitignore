@@ -1,3 +1,5 @@
 .env
 go.sum
 
+game/text_gen/libgen.a
+
