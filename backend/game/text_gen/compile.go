@@ -369,9 +369,10 @@ func main() {
   }
 
   tempDir := os.TempDir()
-  tempLibPath := path.Join(tempDir, "2025_game_typing_test_build_cache", "libgen.a")
-  if _, err = os.Stat(tempLibPath); err == nil {
-    err = copyFile(tempLibPath, "libgen.a")
+  tempCacheDir := path.Join(tempDir, "game_typing_test_build_cache")
+  tempLibCacheFile := path.Join(tempCacheDir, "libgen.a")
+  if _, err = os.Stat(tempLibCacheFile); err == nil {
+    err = copyFile(tempLibCacheFile, "libgen.a")
     if err != nil {
       fmt.Println("Cant copying libgen.a from tempDir even tho it exists: " + err.Error())
     } else {
@@ -408,11 +409,11 @@ func main() {
   fmt.Println(string(output))
   if err != nil { panic("Error executing command: " + err.Error()) }
 
-  err = os.MkdirAll(path.Join(tempDir, "2025_ccs_prob_game_build_cache"), 0755)
+  err = os.MkdirAll(tempCacheDir, 0755)
   if err != nil {
     fmt.Println("Error creating build cache directory: " + err.Error())
   }
-  err = copyFile("libgen.a", tempLibPath)
+  err = copyFile("libgen.a", tempLibCacheFile)
   if err != nil {
     fmt.Println("Error copying libgen.a to tempDir: " + err.Error())
   }
