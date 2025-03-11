@@ -106,7 +106,7 @@ pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
         const word = generator.gen();
         array_list.ensureUnusedCapacity(allocator, word.len + 1) catch @panic("OOM");
         array_list.appendSliceAssumeCapacity(word);
-        array_list.appendAssumeCapacity(' ');
+        array_list.appendAssumeCapacity(if (comptime_id == 2) '\n' else ' ');
       }
       array_list.appendSlice(allocator, generator.gen()) catch @panic("OOM");
 
