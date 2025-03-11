@@ -398,7 +398,12 @@ func main() {
   println("Compiling libgen.a")
   if (zigCommand == "") { zigCommand = installZig() }
 
-  output, err := exec.Command(zigCommand, "build-lib", "-OReleaseFast", "-fstrip", "gen.zig").CombinedOutput()
+  output, err := exec.Command(
+    zigCommand, "build-lib", "--gc-sections", "-dead_strip", "-dead_strip_dylibs",
+    "-static", "-fno-valgrind", "-fno-stack-check", "-fno-entry",
+    "-mno-red-zone", "-fomit-frame-pointer", "-fno-stack-protector", "-fno-unwind-tables", "-fstrip",
+    "-OReleaseFast", "gen.zig",
+  ).CombinedOutput()
   defer os.Remove("libgen.a.o")
   fmt.Println(string(output))
   if err != nil { panic("Error executing command: " + err.Error()) }
