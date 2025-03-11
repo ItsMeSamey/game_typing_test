@@ -32,32 +32,6 @@ const GenSentence = GenWords(.{.defaultData = @embedFile("./text_gen/src/data/wo
 
 const GenMarkov = @import("text_gen/src/genMarkov.zig");
 
-// const TypeInt = enum(u2) {
-//   WordAlpha = 0,
-//   WordNonAlpha = 1,
-//   Sentence = 2,
-//   Markov = 3,
-//
-//   pub fn fromType(comptime T: type) TypeInt {
-//     return switch (T) {
-//       GenWordAlpha => .WordAlpha,
-//       GenWordNonAlpha => .WordNonAlpha,
-//       GenSentence => .Sentence,
-//       GenMarkov.AnyMarkovGen => .Markov,
-//       else => @compileError("Invalid type"),
-//     };
-//   }
-//
-//   pub fn toType(comptime self: TypeInt) type {
-//     return switch (self) {
-//       .WordAlpha => GenWordAlpha,
-//       .WordNonAlpha => GenWordNonAlpha,
-//       .Sentence => GenSentence,
-//       .Markov => GenMarkov.AnyMarkovGen,
-//     };
-//   }
-// };
-
 var char_markov: GenMarkov.AnyMarkovGen = undefined;
 var word_markov: GenMarkov.AnyMarkovGen = undefined;
 
@@ -102,23 +76,6 @@ fn newRandom() std.Random {
   return globalRng.random();
 }
 
-// fn create(generator: anytype) *anyopaque {
-//   const alignment = @max(@alignOf(generator), 1 << @bitSizeOf(TypeInt));
-//   const mem = gpa.allocator().alignedAlloc(@TypeOf(generator), alignment, @sizeOf(generator)) catch @panic("OOM");
-//
-//   const newGenerator: *@TypeOf(generator) = @ptrCast(mem.ptr);
-//   newGenerator.roll();
-//
-//   @memcpy(newGenerator, &generator);
-//   return @ptrFromInt(@intFromPtr(newGenerator) | TypeInt.fromType(@TypeOf(generator)));
-// }
-//
-// pub export fn getWordAlpha() *anyopaque { return create(GenWordAlpha{.state = .{.random = newRandom()}, .data = .{}}); }
-// pub export fn getWordNonAlpha() *anyopaque { return create(GenWordNonAlpha{.state = .{.random = newRandom()}, .data = .{}}); }
-// pub export fn getSentence() *anyopaque { return create(GenSentence{.state = .{.random = newRandom()}, .data = .{}}); }
-// pub export fn getMarkovChar() *anyopaque { return create(char_markov.dupe(gpa.allocator())); }
-// pub export fn getMarkovWord() *anyopaque { return create(word_markov.dupe(gpa.allocator())); }
-
 pub export fn genN(state: u32, n: u16, id: u8) StringStruct {
   const allocator = gpa.allocator();
   if (n == 0) return .{.ptr = undefined, .len = 0, .capacity = 0};
@@ -130,8 +87,10 @@ pub export fn genN(state: u32, n: u16, id: u8) StringStruct {
         1 => GenWordNonAlpha{.state = .{.random = newRandom()}, .data = .{}},
         2 => GenSentence{.state = .{.random = newRandom()}, .data = .{}},
         3 => char_markov.dupe(allocator),
-        4 => word_markov.dupe(allocator),
+        4 => word_markov,
       };
+      defer if (comptime_id == 3) generator.free();
+
       if (state != std.math.maxInt(u32)) generator.state().at = state;
       var array_list = std.ArrayListUnmanaged(u8){};
 
