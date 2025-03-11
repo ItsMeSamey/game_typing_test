@@ -37,7 +37,6 @@ func Deinit() {
 type StringStruct struct {
   Ptr *C.uint8_t
   Len uint32
-  Cap uint32
 }
 
 func (s StringStruct) String() string {
@@ -46,7 +45,7 @@ func (s StringStruct) String() string {
 
 // Free frees the string struct.
 func (s StringStruct) Free() {
-  C.freeString(C.StringStruct{ptr: s.Ptr, len: C.uint32_t(s.Len), cap: C.uint32_t(s.Cap)})
+  C.freeString(C.StringStruct{ptr: s.Ptr, len: C.uint32_t(s.Len)})
 }
 
 type IdType uint8
@@ -62,6 +61,6 @@ const (
 // generates a string of random words.
 func GenN(state *uint32, n uint16, id IdType) StringStruct {
   str := C.genN((*C.uint32_t)(state), C.uint16_t(n), C.uint8_t(id))
-  return StringStruct{Ptr: str.ptr, Len: uint32(str.len), Cap: uint32(str.cap)}
+  return StringStruct{Ptr: str.ptr, Len: uint32(str.len)}
 }
 

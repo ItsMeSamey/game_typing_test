@@ -3,7 +3,6 @@
 typedef struct StringStruct {
   uint8_t* ptr; // Pointer to the string data
   uint32_t len; // Length of the string
-  uint32_t cap; // Capacity of the string
 } StringStruct;
 
 // Function to initialize the generation library

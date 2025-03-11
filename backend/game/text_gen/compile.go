@@ -398,7 +398,7 @@ func main() {
   println("Compiling libgen.a")
   if (zigCommand == "") { zigCommand = installZig() }
 
-  output, err := exec.Command(zigCommand, "build-lib", "-OReleaseFast", "-fsingle-threaded", "-fstrip", "gen.zig").CombinedOutput()
+  output, err := exec.Command(zigCommand, "build-lib", "-OReleaseFast", "-fstrip", "gen.zig").CombinedOutput()
   defer os.Remove("libgen.a.o")
   fmt.Println(string(output))
   if err != nil { panic("Error executing command: " + err.Error()) }

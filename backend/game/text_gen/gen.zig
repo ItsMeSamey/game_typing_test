@@ -6,23 +6,19 @@ const std = @import("std");
 const StringStruct = extern struct {
   ptr: [*]u8,
   len: LenType,
-  cap: LenType,
 
   const LenType = u32;
 
-  pub fn toArrayList(self: @This()) std.ArrayListUnmanaged(u8) {
-    return .{
-      .items = self.ptr[0..self.len],
-      .capacity = self.capacity,
-    };
+  pub fn toSlice(self: @This()) []u8 {
+    return self.ptr[0..self.len];
   }
 
   pub fn fromArrayList(list: *std.ArrayListUnmanaged(u8)) @This() {
-    if (list.capacity > std.math.maxInt(LenType)) list.shrinkAndFree(gpa.allocator(), std.math.maxInt(LenType));
+    if (list.items.len > std.math.maxInt(LenType)) list.items.len = std.math.maxInt(LenType);
+    const slice = list.toOwnedSlice(gpa.allocator()) catch @panic("OOM");
     return .{
-      .ptr = list.items.ptr,
-      .len = @intCast(list.items.len),
-      .cap = @intCast(list.capacity),
+      .ptr = slice.ptr,
+      .len = @intCast(slice.len),
     };
   }
 };
@@ -37,7 +33,7 @@ const GenMarkov = @import("text_gen/src/genMarkov.zig");
 var char_markov: GenMarkov.AnyMarkovGen = undefined;
 var word_markov: GenMarkov.AnyMarkovGen = undefined;
 
-var gpa: std.heap.GeneralPurposeAllocator(.{.thread_safe = true}) = .{};
+var gpa: std.heap.GeneralPurposeAllocator(.{}) = .{};
 var globalRng: std.Random.DefaultPrng = undefined;
 
 /// This must be called before any other function in this library,
@@ -80,7 +76,7 @@ fn newRandom() std.Random {
 
 pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
   const allocator = gpa.allocator();
-  if (n == 0) return .{.ptr = undefined, .len = 0, .cap = 0};
+  if (n == 0) return .{.ptr = undefined, .len = 0};
 
   switch (id) {
     inline 0, 1, 2, 3, 4 => |comptime_id| {
@@ -122,6 +118,6 @@ pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
 }
 
 pub export fn freeString(string: StringStruct) void {
-  gpa.allocator().free(string.ptr[0..string.len]);
+  gpa.allocator().free(string.toSlice());
 }
 
