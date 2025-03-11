@@ -1,18 +1,21 @@
 // Define the string struct as used in Zig
-typedef struct string {
-  const char* ptr; // Pointer to the string data
-  int len;       // Length of the string
-} string;
+#include <stdint.h>
+typedef struct StringStruct {
+  uint8_t* ptr; // Pointer to the string data
+  uint32_t len; // Length of the string
+  uint32_t cap; // Capacity of the string
+} StringStruct;
 
-// Function to initialize the text generation library
+// Function to initialize the generation library
 void init(void);
 
-// Function to deinitialize the text generation library
+// Function to deinitialize the generation library
 void deinit(void);
 
-// Generate a random word using Markov chain
-string genWordMarkov(void);
+// Generate a string of random words
+// New state is stored in state pointer
+StringStruct genN(uint32_t *state, uint16_t n, uint8_t id);
 
-// Re-roll the word Markov generator
-void rollWordMarkov(void);
+// Free the string struct
+void freeString(StringStruct string);
 

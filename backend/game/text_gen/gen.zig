@@ -4,9 +4,11 @@
 const std = @import("std");
 
 const StringStruct = extern struct {
-  ptr: [*]const c_char,
-  len: u32,
-  capacity: u32,
+  ptr: [*]u8,
+  len: LenType,
+  cap: LenType,
+
+  const LenType = u32;
 
   pub fn toArrayList(self: @This()) std.ArrayListUnmanaged(u8) {
     return .{
@@ -16,11 +18,11 @@ const StringStruct = extern struct {
   }
 
   pub fn fromArrayList(list: std.ArrayListUnmanaged(u8)) @This() {
-    if (list.capacity > std.math.maxInt(u32)) list.shrinkAndFree(gpa.allocator(), std.math.maxInt(u32));
+    if (list.capacity > std.math.maxInt(LenType)) list.shrinkAndFree(gpa.allocator(), std.math.maxInt(LenType));
     return .{
       .ptr = list.items.ptr,
       .len = @intCast(list.items.len),
-      .capacity = @intCast(list.capacity),
+      .cap = @intCast(list.capacity),
     };
   }
 };
@@ -76,7 +78,7 @@ fn newRandom() std.Random {
   return globalRng.random();
 }
 
-pub export fn genN(state: u32, n: u16, id: u8) StringStruct {
+pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
   const allocator = gpa.allocator();
   if (n == 0) return .{.ptr = undefined, .len = 0, .capacity = 0};
 
@@ -91,7 +93,12 @@ pub export fn genN(state: u32, n: u16, id: u8) StringStruct {
       };
       defer if (comptime_id == 3) generator.free();
 
-      if (state != std.math.maxInt(u32)) generator.state().at = state;
+      if (state.* != std.math.maxInt(u32)) {
+        generator.state().at = state.*;
+      } else {
+        generator.roll();
+      }
+
       var array_list = std.ArrayListUnmanaged(u8){};
 
       for (0..n-1) |_| {
@@ -102,12 +109,13 @@ pub export fn genN(state: u32, n: u16, id: u8) StringStruct {
       }
       array_list.appendSlice(generator.gen()) catch @panic("OOM");
 
+      state.* = generator.state().at;
       return StringStruct.fromArrayList(array_list);
     }
   }
 }
 
-pub export fn free(string: StringStruct) void {
+pub export fn freeString(string: StringStruct) void {
   gpa.allocator().free(string.ptr[0..string.len]);
 }
 

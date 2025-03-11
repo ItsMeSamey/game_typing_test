@@ -5,9 +5,21 @@ package textgen
 
 /*
 #cgo LDFLAGS: -L. -lgen
+
+#cgo nocallback init
+
+#cgo nocallback deinit
+
+#cgo noescape genN
+#cgo nocallback genN
+
+#cgo noescape freeString
+#cgo nocallback freeString
+
 #include "gen.h"
 */
 import "C"
+import "unsafe"
 
 func init() { Init() }
 
@@ -21,14 +33,24 @@ func Deinit() {
   C.deinit()
 }
 
-// GenWordMarkov generates a random word using the Markov chain and returns it as a Go string.
-func genWordMarkov() string {
-  result := C.genWordMarkov()
-  return C.GoStringN(result.ptr, C.int(result.len))
+type StringStruct struct {
+  Ptr *C.uint8_t
+  Len uint32
+  Cap uint32
 }
 
-// RollWordMarkov re-rolls the word Markov generator.
-func rollWordMarkov() {
-  C.rollWordMarkov()
+func (s StringStruct) String() string {
+  return C.GoStringN((*C.char)(unsafe.Pointer(s.Ptr)), C.int(s.Len))
+}
+
+// Free frees the string struct.
+func (s StringStruct) Free() {
+  C.freeString(C.StringStruct{ptr: s.Ptr, len: C.uint32_t(s.Len), cap: C.uint32_t(s.Cap)})
+}
+
+// generates a string of random words.
+func genN(state *uint32, n uint16, id uint8) StringStruct {
+  str := C.genN((*C.uint32_t)(state), C.uint16_t(n), C.uint8_t(id))
+  return StringStruct{Ptr: str.ptr, Len: uint32(str.len), Cap: uint32(str.cap)}
 }
 
