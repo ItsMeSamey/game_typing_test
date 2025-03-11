@@ -17,7 +17,7 @@ const StringStruct = extern struct {
     };
   }
 
-  pub fn fromArrayList(list: std.ArrayListUnmanaged(u8)) @This() {
+  pub fn fromArrayList(list: *std.ArrayListUnmanaged(u8)) @This() {
     if (list.capacity > std.math.maxInt(LenType)) list.shrinkAndFree(gpa.allocator(), std.math.maxInt(LenType));
     return .{
       .ptr = list.items.ptr,
@@ -80,21 +80,26 @@ fn newRandom() std.Random {
 
 pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
   const allocator = gpa.allocator();
-  if (n == 0) return .{.ptr = undefined, .len = 0, .capacity = 0};
+  if (n == 0) return .{.ptr = undefined, .len = 0, .cap = 0};
 
   switch (id) {
     inline 0, 1, 2, 3, 4 => |comptime_id| {
-      const generator = switch (comptime_id) {
+      var generator = switch (comptime_id) {
         0 => GenWordAlpha{.state = .{.random = newRandom()}, .data = .{}},
         1 => GenWordNonAlpha{.state = .{.random = newRandom()}, .data = .{}},
         2 => GenSentence{.state = .{.random = newRandom()}, .data = .{}},
-        3 => char_markov.dupe(allocator),
+        3 => char_markov.dupe(allocator) catch @panic("OOM"),
         4 => word_markov,
+        else => unreachable,
       };
-      defer if (comptime_id == 3) generator.free();
+      defer if (comptime_id == 3) generator.free(allocator);
 
       if (state.* != std.math.maxInt(u32)) {
-        generator.state().at = state.*;
+        if (@hasField(@TypeOf(generator), "state")) {
+          generator.state.at = state.*;
+        } else {
+          generator.state().at = state.*;
+        }
       } else {
         generator.roll();
       }
@@ -103,15 +108,16 @@ pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
 
       for (0..n-1) |_| {
         const word = generator.gen();
-        array_list.ensureUnusedCapacity(word.len + 1) catch @panic("OOM");
+        array_list.ensureUnusedCapacity(allocator, word.len + 1) catch @panic("OOM");
         array_list.appendSliceAssumeCapacity(word);
         array_list.appendAssumeCapacity(' ');
       }
-      array_list.appendSlice(generator.gen()) catch @panic("OOM");
+      array_list.appendSlice(allocator, generator.gen()) catch @panic("OOM");
 
-      state.* = generator.state().at;
-      return StringStruct.fromArrayList(array_list);
-    }
+      state.* = if (@hasField(@TypeOf(generator), "state")) generator.state.at else generator.state().at;
+      return StringStruct.fromArrayList(&array_list);
+    },
+    else => std.debug.panic("Invalid id {d}\n", .{id}),
   }
 }
 

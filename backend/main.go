@@ -1,16 +1,19 @@
 package main
 
 import (
-  "backend/common"
-  "backend/game"
+  "os"
   "log"
   "time"
 
-  utils "github.com/ItsMeSamey/go_utils"
+  "backend/game"
+  "backend/common"
+  "backend/common/fiberzerolog"
+  "backend/common/fibernewrelic"
+
   "github.com/bytedance/sonic"
   "github.com/gofiber/fiber/v3"
   "github.com/gofiber/fiber/v3/middleware/cors"
-
+  utils "github.com/ItsMeSamey/go_utils"
   fiberRecover "github.com/gofiber/fiber/v3/middleware/recover"
 )
 

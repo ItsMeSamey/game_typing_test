@@ -380,11 +380,11 @@ func main() {
   }
 
   println("Generating markov.word model")
-  _, err = os.Stat(path.Join("text_gen", "data", "markov.word"))
+  _, err = os.Stat(path.Join("text_gen", "src", "data", "markov.word"))
   if err != nil && os.IsNotExist(err) {
     if (zigCommand == "") { zigCommand = installZig() }
 
-    err := os.Chdir("text_gen")
+    err := os.Chdir(path.Join("text_gen", "src"))
     if err != nil { panic(err) }
     output, err := exec.Command(zigCommand, "run", "-OReleaseFast", "-fsingle-threaded", "main.zig").CombinedOutput()
     fmt.Println(string(output))
