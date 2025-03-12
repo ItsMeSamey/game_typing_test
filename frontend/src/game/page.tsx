@@ -1,6 +1,6 @@
 'use strict'
 
-import { For, onCleanup, onMount, createSignal, createEffect, Show } from 'solid-js'
+import { For, onCleanup, onMount, createSignal, createEffect, Show, untrack } from 'solid-js'
 import { createStore } from 'solid-js/store'
 
 import { Timer } from '../utils/timer'
@@ -28,40 +28,35 @@ function getFontHeight() {
 }
 
 function TypingModel() {
-  const [text, setTextRaw] = createSignal<string>('')
+  const [text, setTextRaw] = createSignal<string>('Hola Amigo')
   const [characters, setCharacters] = createStore<State[]>(Array(text().length).fill(State.unreached))
-  createEffect(() => setCharacters(Array(text().length).fill(State.unreached)))
+  createEffect(() => {
+    const t = text()
+    if (t !== '') setCursorPosition()
+    setCharacters(Array(t.length).fill(State.unreached))
+  })
 
   const [speed, setSpeed] = createSignal(0)
   const [myBest, setMyBest] = createSignal<number>(0)
-  const [opponentBest, setOpponentBest] = createSignal<number>(0)
-
-  let currentIndex: number = -1
-  let nextTexts: string[] = []
 
   const fontHeight = getFontHeight()
   let cursor: HTMLDivElement = undefined as unknown as HTMLDivElement
   let divRef: HTMLDivElement = undefined as unknown as HTMLDivElement
 
-  const timer = new Timer()
   let at = 0
   let atWord = 0
   let presses: [string, number][] = []
+  const timer = new Timer()
 
   function reset() {
-    at = 0
-    atWord = 0
+    atWord = at = 0
     presses = []
     timer.reset()
-    setCharacters({from: 0, to: text().length}, State.unreached)
+    setCharacters({from: 0, to: untrack(text).length}, State.unreached)
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      reset()
-      ws.exchange('r' + currentIndex)
-      return
-    }
+    if (e.key === 'Escape') return reset()
 
     const txt = text()
     if (e.key.length !== 1 || at >= txt.length) return
@@ -91,22 +86,14 @@ function TypingModel() {
   }
 
   function setCursorPosition() {
-    const bounds = divRef.children[at]?.getBoundingClientRect() ?? (() => {
-      const bounds = divRef.children[divRef.children.length - 1]?.getBoundingClientRect()
-      if (!bounds) return divRef.getBoundingClientRect()
-      return {
-        left: bounds.left + bounds.width,
-        top: bounds.top,
-      }
-    })()
+    let bounds = divRef.children[at]?.getBoundingClientRect() as {left: number, top: number} | undefined
+    if (!bounds) {
+      const inbounds = divRef.children[divRef.children.length - 1]?.getBoundingClientRect()
+      if (!inbounds) return divRef.getBoundingClientRect()
+      bounds = {left: inbounds.left+inbounds.width, top: inbounds.top}
+    }
     cursor.style.transform = `translate(${bounds.left}px, ${bounds.top}px)`
   }
-
-  createEffect(() => {
-    if (text() !== '') {
-      try {setCursorPosition()} catch (e) {console.log(e)}
-    }
-  })
 
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -131,12 +118,11 @@ function TypingModel() {
       />
       <h1 class='text-2xl font-bold mb-4 max-sm:mb-2'>Typing Test</h1>
       <div class='max-w-3xl text-muted-foreground/75 pb-2 sm:mt-[-2rem] flex flex-row w-full'>
-        Typing speed: 
-        <span class='text-foreground/75 font-semibold motion-opacity-in motion-delay-250'> {characters[0] !== State.unreached? speed().toFixed(2): 'N/A'} </span>
+        Typing speed:
+        <span class='text-foreground/75 font-semibold motion-opacity-in motion-delay-250 px-1'> {characters[0] !== State.unreached? speed().toFixed(2): '?'} </span>
         WPM
         <div class='flex flex-row gap-4 font-semibold ml-auto'>
-          <span class={'text-green-500 ' + (myBest() > opponentBest()? 'scale-125': 'opacity-85')}>{myBest().toFixed(2)}</span>
-          <span class={'text-red-500 ' + (opponentBest() > myBest()? 'scale-125': 'opacity-85')}>{opponentBest().toFixed(2)}</span>
+          <span class='text-green-500'>{myBest().toFixed(2)}</span>
         </div>
       </div>
       <div class='max-w-3xl select-none text-lg mb-4 motion-translate-y-in tracking-widest' ref={divRef}>

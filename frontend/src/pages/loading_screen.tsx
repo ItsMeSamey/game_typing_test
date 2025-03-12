@@ -10,9 +10,6 @@ function CoolFlow(text: string) {
       {text.split('').reverse().map((c, i) => (
         <div style={{
           'animation-delay': `${i * .1}s`,
-          '-o-animation-delay': `${i * .1}s`,
-          '-moz-animation-delay': `${i * .1}s`,
-          '-webkit-animation-delay': `${i * .1}s`,
         }}>
           {c}
         </div>

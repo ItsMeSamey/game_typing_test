@@ -1,12 +1,14 @@
 package game
 
 import (
-  "strconv"
+	"fmt"
+	"strconv"
+	"time"
 
-  "backend/game/text_gen"
+	"backend/game/text_gen"
 
-  utils "github.com/ItsMeSamey/go_utils"
-  "github.com/gofiber/fiber/v3"
+	utils "github.com/ItsMeSamey/go_utils"
+	"github.com/gofiber/fiber/v3"
 )
 
 func AddRoutes(router fiber.Router) {
@@ -17,13 +19,15 @@ func AddRoutes(router fiber.Router) {
 
     count, err := strconv.Atoi(utils.B2S(c.Request().Header.Peek("count")))
     if err = utils.WithStack(err); err != nil { return }
-    if count < 1 || count > (1 << 12) { return utils.WithStack(fiber.ErrBadRequest) }
+    if count < 1 || count >= (1 << 16) { return utils.WithStack(fiber.ErrBadRequest) }
 
     state, err := strconv.Atoi(utils.B2S(c.Request().Header.Peek("state")))
     if err = utils.WithStack(err); err != nil { return }
 
     uint32_state := uint32(state)
+    t := time.Now()
     str := textgen.GenN(&uint32_state, uint16(count), textgen.IdType(id))
+    fmt.Println("Elapsed:", time.Since(t))
     defer str.Free()
 
     c.Response().Header.Set("state", strconv.Itoa(int(uint32_state)))

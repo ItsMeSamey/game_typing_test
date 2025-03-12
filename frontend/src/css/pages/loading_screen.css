@@ -4,7 +4,9 @@
 
 /* Loading Cool Flow */
 .__loading_cool_flow {
-  @apply absolute overflow-visible select-none;
+  position: absolute;
+  overflow: visible;
+  user-select: none;
   width: 600px;
   height: 36px;
   left: 50%;
@@ -13,7 +15,8 @@
 }
 
 .__loading_cool_flow div {
-  @apply absolute rotate-180;
+  position: absolute;
+  transform: rotate(180deg);
   width: 20px;
   height: 36px;
   opacity: 0;
@@ -264,7 +267,7 @@
 }
 
 .__loading_random_shape {
-  @apply shadow-black shadow-lg;
+  @apply shadow-lg shadow-black;
   position:absolute;
   display:block;
   left:50%;bottom:0;
