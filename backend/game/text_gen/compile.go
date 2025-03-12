@@ -372,10 +372,12 @@ func main() {
   tempCacheDir := path.Join(tempDir, "game_typing_test_build_cache")
   tempLibCacheFile := path.Join(tempCacheDir, "libgen.a")
   if _, err = os.Stat(tempLibCacheFile); err == nil {
+    println("Copying libgen.a from", tempLibCacheFile)
     err = copyFile(tempLibCacheFile, "libgen.a")
     if err != nil {
       fmt.Println("Cant copying libgen.a from tempDir even tho it exists: " + err.Error())
     } else {
+      println("Done Copying libgen.a")
       return
     }
   }
@@ -387,7 +389,7 @@ func main() {
 
     err := os.Chdir(path.Join("text_gen", "src"))
     if err != nil { panic(err) }
-    output, err := exec.Command(zigCommand, "run", "-OReleaseFast", "-fsingle-threaded", "main.zig").CombinedOutput()
+    output, err := exec.Command(zigCommand, "run", "-OReleaseFast", "-fstrip", "-fsingle-threaded", "trainMarkov.zig").CombinedOutput()
     fmt.Println(string(output))
     if err != nil { panic("Error executing command: " + err.Error()) }
     err = os.Chdir(cwd)
@@ -417,5 +419,6 @@ func main() {
   if err != nil {
     fmt.Println("Error copying libgen.a to tempDir: " + err.Error())
   }
+  println("Done compiling libgen.a")
 }
 
