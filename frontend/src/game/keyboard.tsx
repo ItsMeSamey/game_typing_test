@@ -26,14 +26,27 @@ export default function Keyboard(): JSX.Element {
     }
   }
 
+  function clearAll() {
+    for (const keySvg of keyboardRef.children) {
+      const children = keySvg.children
+      if (!children) continue
+      children[0].setAttribute('class', 'fill-muted')
+      for (let i = 1; i < children.length; i++) {
+        children[i].setAttribute('class', 'fill-foreground')
+      }
+    }
+  }
+
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', clearAll)
   })
 
   onCleanup(() => {
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('keyup', handleKeyUp)
+    window.removeEventListener('blur', clearAll)
   })
 
   return (
