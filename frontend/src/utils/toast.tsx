@@ -2,7 +2,12 @@
 
 import { showToast } from '~/registry/ui/toast'
 
-export function showError(e: Error) {
+export interface ErrorLike {
+  name: string
+  message: string
+}
+
+export function showError(e: ErrorLike) {
   console.error(e)
   showToast({
     title: e.name,
