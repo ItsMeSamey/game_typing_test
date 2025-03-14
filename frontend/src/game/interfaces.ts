@@ -28,29 +28,26 @@ export enum FilterCaseTypeEnum {
   AllLower = 0,
   // For psychotic people
   AllUpper = 1,
-  // Keep the original case
-  Keep = 2,
 }
-export interface FilterCaseTypePercentage {
+export interface FilterCaseTypePossibilityAdd {
   // If this is set, the case is added instead of being removed
-  add?: FilterTypeAddPosition
+  add: FilterTypeAddPosition
 
-  // chance that the character occurres in the start
-  percentageStart: number
-  // chance that the character occurres in the end
-  percentageEnd: number
-  // chance that the character occurres anywhere else
-  percentageInside: number
+  // the porobability that the character occurres anywhere inside the word
+  possibility: number
 }
-export interface FilterCaseTypeMergedPercentage {
-  // the percentage chance that the character occurres anywhere inside the word
-  percentage: number
+export interface FilterCaseTypePossibilityRemove {
+  // If this is set, the case is added instead of being removed
+  remove: FilterTypeAddPosition
+
+  // the porobability that the character occurres anywhere inside the word
+  possibility: number
 }
 export interface FilterCaseType {
   // Weather this filter is enabled or not
   enabled: boolean
   // The filter value
-  filter: FilterCaseTypeEnum | FilterCaseTypePercentage | FilterCaseTypeMergedPercentage
+  filter: FilterCaseTypeEnum | FilterCaseTypePossibilityAdd | FilterCaseTypePossibilityRemove
 }
 
 export enum FilterCharacterTypeEnum {
@@ -61,42 +58,43 @@ export enum FilterCharacterTypeEnum {
   // Filter out special characters, eg -/,/./@// etc
   SpecialChars = 1 << 1,
 }
-export interface FilterCharacterTypeDiscard {
-  // string containing all the characters to discard
-  discard: string
-  // percentage chance to discard a character
-  percentage?: string
-}
-export interface FilterCharacterTypeReplace {
+export interface FilterCharacterTypeDiscardReplace {
   // string containing all the characters to discard
   characters: string
   // string containing the replacement for the character that will be discarded
   // this should be the same length as that of the characters array
-  // defaults to space otherwise
+  // Defaults concatenate otherwise
   replacement?: string
-  // percentage chance to discard a character
-  percentage?: string
+  // porobability to discard a character
+  possibility?: string
 }
 export interface FilterCharacterTypeKeep {
   // string containing the list of characters to keep
   keep: string
+  // string containing the replacement for the character that will be discarded
+  // this should be the same length as that of the characters array
+  // Defaults concatenate otherwise
+  replacement?: string
+  // porobability to discard a character
+  possibility?: string
 }
-
-export interface FilterCharacterTypeAddTemplate {
+export interface FilterCharacterTypeAdd {
   // string containing the characters that should be added
   addable: string
+  // the porobability that the character occurres anywhere inside the word
+  // defaults to 1 (100%
+  possibility?: number
+  // how many time to roll the dice to add the character to the word
+  // defaults to 1
+  times?: number
   // the position filters for the corresponding characters
   positions: FilterTypeAddPosition[]
 }
-export interface FilterCharacterTypeAddPercentage extends FilterCharacterTypeAddTemplate {percentage: number}
-export interface FilterCharacterTypeAddPercentages extends FilterCharacterTypeAddTemplate {percentages: number[]}
-export type FilterCharacterTypeAdd = FilterCharacterTypeAddPercentage | FilterCharacterTypeAddPercentages
-
 export interface FilterCharacterType {
   // Weather this filter is enabled or not
   enabled: boolean
   // The filter value
-  filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd
+  filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscardReplace | FilterCharacterTypeKeep | FilterCharacterTypeAdd
 }
 
 export interface FilterFunctionTypeV1 {
@@ -158,7 +156,7 @@ export interface Options {
   //   `filterFunction` third (same order as in array)
 
   // Filter for text cAsE
-  filterCase: FilterCaseType
+  filterCase: FilterCaseType[]
   // filter(s) for unwanted characters
   filterCharacter: FilterCharacterType[]
   // transform text using custom functions
