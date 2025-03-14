@@ -17,10 +17,19 @@ export const OptionsStore = new LocalstorageStore<Options>('game.typing.options'
       filter: FilterCharacterTypeEnum.Numbers | FilterCharacterTypeEnum.SpecialChars,
     },
   ],
-  filters: [],
+  filterFunction: [],
 
   caseBehaviour: CaseBehaviour.Warn,
   errorBehaviour: ErrorBehaviour.Halt,
   spacebarBehaviour: SpacebarBehaviour.NoErrorOnWordStart,
 }, JSON.parse, JSON.stringify)
+
+//export function BehaviourOptions(options: Options) {
+//  ;
+//}
+
+export function applyFilters(options: Options, words: string[]) {
+
+  return words.join(' ')
+}
 
