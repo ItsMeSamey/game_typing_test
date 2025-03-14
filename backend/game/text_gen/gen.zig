@@ -99,10 +99,11 @@ pub export fn genN(noalias state: *u32, n: u16, id: u8) StringStruct {
       } else {
         generator.roll();
       }
+      if (!generator.validateState()) generator.roll();
 
       var array_list = std.ArrayListUnmanaged(u8){};
 
-      for (0..n-1) |_| {
+      for (0..n) |_| {
         const word = generator.gen();
         array_list.ensureUnusedCapacity(allocator, word.len + 1) catch @panic("OOM");
         array_list.appendSliceAssumeCapacity(word);
