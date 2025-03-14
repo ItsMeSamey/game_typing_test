@@ -32,7 +32,7 @@ function getFontHeight() {
 
 const optionsStore = new LocalstorageStore<Options>('game.typing.options', {
   type: GeneratorType.MarkovWord,
-  wordCount: 4,
+  wordCount: 16,
 
   filterCase: {
     enabled: true,
@@ -137,12 +137,38 @@ function getText(id?: GeneratorType, count?: number, state?: string): string | P
   return getTextAsync()
 }
 
-async function promisiyValue<T>(v: T | Promise<T>): Promise<T> {return v}
+//async function promisiyValue<T>(v: T | Promise<T>): Promise<T> {return v}
 
 function TypingModel(options: Options) {
-  const [text, setText] = createSignal<string>(localStorage.getItem('game.typing.textcache.' + options.type + '.current') ?? '')
+  const [text, setText] = createSignal<string>((() => {
+    let localCache = localStorage.getItem('game.typing.textcache.' + options.type + '.current')
+    if (localCache) {
+      localCache = localCache + ' '
+    } else {
+      localCache = ''
+    }
+
+    const count = untrack(() => options.wordCount)
+    const words = localCache.split(' ')
+    const currentCount = words.length
+    if (currentCount == count) {
+      return localCache
+    } else if (currentCount > count) {
+      const keyName = 'game.typing.textcache.' + options.type
+      localStorage.setItem(keyName, words.slice(count).join(' ') + ' ' + localStorage.getItem(keyName))
+      return words.slice(0, count).join(' ')
+    }
+
+    const next = getText(undefined, count - currentCount)
+    if (next instanceof Promise) {
+      next.then(text => setText(localCache + text)).catch(showError)
+      return ''
+    } else {
+      return localCache + next
+    }
+
+  })())
   createEffect(() => localStorage.setItem('game.typing.textcache.' + options.type + '.current', text()))
-  promisiyValue(getText()).then(setText);
 
   const [characters, setCharacters] = createStore<State[]>(Array(text().length).fill(State.unreached))
   createEffect(() => {
@@ -256,7 +282,7 @@ function TypingModel(options: Options) {
         <For each={text() as unknown as string[]}>
           {(key, i) => (
             <span
-              class={`font-semibold tracking-normal motion-delay-500 ${
+              class={`font-semibold motion-delay-500 tracking-wider ${
                 characters[i()] === State.correct ? 'text-green-500' :
                 characters[i()] === State.mistake ? 'text-red-500 underline' :
                 characters[i()] === State.unreached_mistake ? 'text-foreground/75' :
