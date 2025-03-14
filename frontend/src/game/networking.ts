@@ -2,9 +2,8 @@
 
 import { showError, showServerError } from '../utils/toast'
 import { getSite } from '../utils/networking'
-import { GeneratorStateType, GeneratorType, Options } from './interfaces'
+import { GeneratorState, GeneratorType, Options } from './interfaces'
 import { applyFilters } from './options'
-import { createMutable } from 'solid-js/store'
 
 // Split the string around the word
 function splitWordString(str: string, count: number): [string[], string] {
@@ -21,7 +20,7 @@ function splitWordString(str: string, count: number): [string[], string] {
   return [retArray, str.substring(n)]
 }
 
-async function fetchText(id: GeneratorType, state: GeneratorStateType, count: number = 1 << 16): Promise<string> {
+async function fetchText(id: GeneratorType, state: GeneratorState, count: number = 1 << 16): Promise<string> {
   const result = await fetch(getSite('typing') + '/gen', {headers: {id: String(id), count: String(count), state: String(state.state)}})
   const text = await result.text()
   if (!result.ok) showServerError(text)
@@ -39,12 +38,11 @@ async function fetchText(id: GeneratorType, state: GeneratorStateType, count: nu
   return text.substring(stateIdx+1)
 }
 
-async function fulfillCache(id: GeneratorType, state: GeneratorStateType, currentCache: string) {
+async function fulfillCache(id: GeneratorType, state: GeneratorState, currentCache: string) {
   // Note `1 << 16` here is character count not word count so this works
   if (currentCache.length < (1 << 16)) {
     try {
       currentCache = currentCache + await fetchText(id!, state)
-      localStorage.setItem('game.typing.textcache.' + id + '.state', String(state.state))
     } catch (e) {
       showError(e as any)
     }
@@ -53,12 +51,11 @@ async function fulfillCache(id: GeneratorType, state: GeneratorStateType, curren
 }
 
 // This makes it so that we dont have to go to loading screen when fetching next text synchronously
-export function getText(id: GeneratorType, state: GeneratorStateType, count: number): string[] | Promise<string[]> {
-  const cacheName = 'game.typing.textcache.' + id
+export function getText(id: GeneratorType, count: number): string[] | Promise<string[]> {
   // MAX(uint32) causes the generator to reroll to a random value
-
   if (count > (1 << 16)) throw new Error(`Invalid count: ${count} is grater than maximum allowed (${(1 << 16) - 1})`)
-  let cache = localStorage.getItem(cacheName)!
+  let cache = localStorage.getItem('game.typing.textcache.' + id)!
+  const state = new GeneratorState(id)
 
   if (cache) {
     const [retval, ncache] = splitWordString(cache, count)
@@ -86,20 +83,19 @@ export function getText(id: GeneratorType, state: GeneratorStateType, count: num
 }
 
 export async function fetchFromCache(options: Options) {
-  let localCache = localStorage.getItem('game.typing.textcache.' + options.type + '.current')
+  let localCache = localStorage.getItem('game.typing.current.' + options.type)
   localCache = localCache? localCache + ' ': ''
 
   const count = options.wordCount
-  let words = localCache.split(' ')
+  let words = localCache? localCache.split(' ').filter(x => x): []
   const currentCount = words.length
 
-  const keyName = 'game.typing.textcache.' + options.type
   if (currentCount > count) {
+    const keyName = 'game.typing.textcache.' + options.type
     localStorage.setItem(keyName, words.slice(count).join(' ') + ' ' + localStorage.getItem(keyName))
     words = words.slice(0, count)
   } else if (currentCount < count) {
-    const state = createMutable(JSON.parse(localStorage.getItem(keyName + '.state') ?? '{state: -1}'))
-    words.push(...await getText(options.type, state, count - currentCount))
+    words.push(...await getText(options.type, count - currentCount))
   }
 
   return applyFilters(options, words)

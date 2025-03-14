@@ -99,18 +99,18 @@ export interface FilterCharacterType {
   filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd
 }
 
-export interface FilterTypeV1 {
+export interface FilterFunctionTypeV1 {
   version: 1
   // The functions is expected to have the following inputs
-  // @param text: The text to transform via the filter
+  // @param words: string[] The words that are to be displayed
   // @return string
   functionString: string
 }
-export interface FilterType {
+export interface FilterFunctionType {
   // Weather this filter is enabled or not
   enabled: boolean
   // The filter value
-  filter: FilterTypeV1
+  filter: FilterFunctionTypeV1
 }
 
 export enum CaseBehaviour {
@@ -152,12 +152,17 @@ export interface Options {
   // Number of words per lesson
   wordCount: number
 
+  // Note: The filters are applied in the order listed here
+  //   `filterCase` first,
+  //   `filterCharacter` second (same order as in array)
+  //   `filterFunction` third (same order as in array)
+
   // Filter for text cAsE
   filterCase: FilterCaseType
   // filter(s) for unwanted characters
   filterCharacter: FilterCharacterType[]
   // transform text using custom functions
-  filters: FilterType[]
+  filterFunction: FilterFunctionType[]
 
   // What to do when user enters the same character but with wrong case
   caseBehaviour: CaseBehaviour
@@ -165,5 +170,21 @@ export interface Options {
   errorBehaviour: ErrorBehaviour
   // What to do when user presses spacebar at the wrong position
   spacebarBehaviour: SpacebarBehaviour
+}
+
+export class GeneratorState {
+  _state: number
+  constructor(public id: GeneratorType) {
+    this._state = +(localStorage.getItem('game.typing.state.' + id) ?? '-1')
+  }
+
+  get state() {
+    return this._state
+  }
+  set state(state: number) {
+    if (this._state === state) return
+    this._state = state
+    localStorage.setItem('game.typing.state.' + this.id, String(state))
+  }
 }
 
