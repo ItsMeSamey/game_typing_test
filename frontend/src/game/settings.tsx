@@ -6,7 +6,6 @@ import { Popover, PopoverTrigger, PopoverContent } from '~/registry/ui/popover'
 import { Slider, SliderFill, SliderLabel, SliderThumb, SliderTrack, SliderValueLabel } from '~/registry/ui/slider'
 
 import ModeToggleGroup from '../components/mode_toggle_group'
-import { WordLength } from './words'
 import { Switch, SwitchControl, SwitchLabel, SwitchThumb } from '~/registry/ui/switch'
 import { untrack } from 'solid-js/web'
 import { Button } from '~/registry/ui/button'

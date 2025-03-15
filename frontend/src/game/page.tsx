@@ -136,7 +136,10 @@ function TypingModel(options: Options) {
           <span class='text-green-500'>{myBest().toFixed(2)}</span>
         </div>
       </div>
-      <div class='max-w-3xl select-none text-lg mb-4 motion-translate-y-in tracking-widest max-h-1/2 overflow-y-scroll' ref={divRef}>
+      <div
+        class='max-w-3xl select-none text-lg mb-4 motion-translate-y-in tracking-widest max-h-1/2 overflow-y-scroll font-mono'
+        ref={divRef}
+      >
         <For each={text() as unknown as string[]}>
           {(key, i) => (
             <span
@@ -147,7 +150,7 @@ function TypingModel(options: Options) {
                 'text-foreground/90'
               }`}
             >
-              {key === ' '? <span class={(characters[i()] !== State.mistake? 'opacity-50': '')}> • </span>: key}
+              {key === ' '? <span class={'break-words ' + (characters[i()] !== State.mistake? 'opacity-50': '')}>•</span>: key}
             </span>
           )}
         </For>
