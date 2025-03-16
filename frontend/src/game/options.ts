@@ -6,7 +6,10 @@ import {
   FilterCaseTypeEnum,
   FilterCaseTypePossibilityAdd,
   FilterCaseTypePossibilityRemove,
+  FilterCharacterTypeAdd,
+  FilterCharacterTypeDiscard,
   FilterCharacterTypeEnum,
+  FilterCharacterTypeKeep,
   FilterTypeAddPosition,
   GeneratorType,
   Options,
@@ -39,10 +42,6 @@ export const OptionsStore = new LocalstorageStore<Options>('game.typing.options'
 //  ;
 //}
 
-export function takeChance(possibility: number) {
-  return Math.random() > possibility
-}
-
 export function applyFilters(options: Options, words: string[]) {
   // Case filter
   for (const filter of options.filterCase) {
@@ -56,8 +55,8 @@ export function applyFilters(options: Options, words: string[]) {
     } else {
       const possibility = filter.filter.possibility
       const transformChar = (filter.filter as FilterCaseTypePossibilityAdd).add !== undefined
-        ?(s: string) => s[0].toUpperCase() === s[0]? s: takeChance(possibility)? s.toUpperCase(): s
-        :(s: string) => s[0].toLowerCase() === s[0]? s: takeChance(possibility)? s.toLowerCase(): s
+        ?(s: string) => s[0].toUpperCase() === s[0]? s: Math.random() > possibility? s.toUpperCase(): s
+        :(s: string) => s[0].toLowerCase() === s[0]? s: Math.random() > possibility? s.toLowerCase(): s
 
       const position = (filter.filter as FilterCaseTypePossibilityAdd).add ?? (filter.filter as FilterCaseTypePossibilityRemove).remove
       const transformWord =
@@ -93,6 +92,94 @@ export function applyFilters(options: Options, words: string[]) {
     }
   }
 
+  // Special character filter
+  const characterFilters: (FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd)[] = []
+  for (const filter of options.filterCharacter) {
+    if (!filter.enabled || filter.filter === FilterCharacterTypeEnum.None) continue
+
+    const numbers = '0123456789'
+    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let pushed = false
+    if (filter.filter === FilterCharacterTypeEnum.Numbers || filter.filter === FilterCharacterTypeEnum.NumberAndSpecialChars) {
+      pushed = true
+      characterFilters.push({discard: numbers})
+    }
+    if (filter.filter === FilterCharacterTypeEnum.SpecialChars || filter.filter === FilterCharacterTypeEnum.NumberAndSpecialChars) {
+      pushed = true
+      characterFilters.push({keep: numbers + characters, replacement: ' '})
+    }
+
+    if (!pushed) characterFilters.push(filter.filter as any)
+  }
+
+  for (const filter of characterFilters) {
+    const takeChance = filter.possibility !== undefined? () => {
+      return Math.random() > filter.possibility!
+    }: () => true
+
+    const addChar =
+      (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.Any
+      ?(s: string) => {
+        const idx = Math.trunc(Math.random() * (s.length+1))
+        return s.substring(0, idx) + (filter as FilterCharacterTypeAdd).add
+      }:
+
+      (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.Start
+      ?(s: string) => (filter as FilterCharacterTypeAdd).add + s:
+
+      (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.Start
+      ?(s: string) => s + (filter as FilterCharacterTypeAdd).add:
+
+      (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.StartAndEnd
+      ?(s: string) => (filter as FilterCharacterTypeAdd).add + s + (filter as FilterCharacterTypeAdd).add:
+
+      (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.StartOrEnd
+      ?(s: string) => Math.random() > .5? (filter as FilterCharacterTypeAdd).add + s: s + (filter as FilterCharacterTypeAdd).add:
+
+      (s: string) => s
+    ;
+
+    const transformWord: (s: string) => string =
+      (filter as FilterCharacterTypeDiscard).discard !== undefined
+      ?(s: string) => {
+        let result = ''
+
+        for (let i = 0; i < s.length; i++) {
+          if (!(filter as FilterCharacterTypeDiscard).discard.includes(s[i]) || !takeChance()) {
+            result += s[i]
+          } else {
+            if ((filter as FilterCharacterTypeDiscard).replacement !== undefined) result += (filter as FilterCharacterTypeDiscard).replacement
+          }
+        }
+        return result
+      }:
+
+      (filter as FilterCharacterTypeKeep).keep !== undefined
+      ?(s: string) => {
+        let result = ''
+
+        for (let i = 0; i < s.length; i++) {
+          if ((filter as FilterCharacterTypeKeep).keep.includes(s[i]) || !takeChance()) {
+            result += s[i]
+          } else {
+            if ((filter as FilterCharacterTypeKeep).replacement !== undefined) result += (filter as FilterCharacterTypeKeep).replacement
+          }
+        }
+        return result
+      }:
+
+      (filter as FilterCharacterTypeAdd).add !== undefined
+      ?(s: string) => {
+        if (!takeChance()) return s
+        return addChar(s)
+      }:
+
+      (() => {throw new Error('Invalid filter type selected')})()
+    ;
+
+    words = words.flatMap(w => transformWord(w).split(' ').filter(s => s))
+  }
+  
   return words.join(' ')
 }
 
