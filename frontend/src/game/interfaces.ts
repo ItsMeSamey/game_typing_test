@@ -54,19 +54,23 @@ export enum FilterCharacterTypeEnum {
   // Dont filter anything
   None = 0,
   // Filter number only
+  // replaces with a nothing
   Numbers = 1 << 0,
   // Filter out special characters, eg -/,/./@// etc
+  // replaces all special characters with a space
   SpecialChars = 1 << 1,
+  // Filter out both numbers and special characters
+  NumberAndSpecialChars = Numbers | SpecialChars,
 }
-export interface FilterCharacterTypeDiscardReplace {
+export interface FilterCharacterTypeDiscard {
   // string containing all the characters to discard
-  characters: string
+  discard: string
   // string containing the replacement for the character that will be discarded
   // this should be the same length as that of the characters array
   // Defaults concatenate otherwise
   replacement?: string
   // porobability to discard a character
-  possibility?: string
+  possibility?: number
 }
 export interface FilterCharacterTypeKeep {
   // string containing the list of characters to keep
@@ -76,25 +80,22 @@ export interface FilterCharacterTypeKeep {
   // Defaults concatenate otherwise
   replacement?: string
   // porobability to discard a character
-  possibility?: string
+  possibility?: number
 }
 export interface FilterCharacterTypeAdd {
   // string containing the characters that should be added
-  addable: string
+  add: string
   // the porobability that the character occurres anywhere inside the word
-  // defaults to 1 (100%
+  // defaults to 1 (100%)
   possibility?: number
-  // how many time to roll the dice to add the character to the word
-  // defaults to 1
-  times?: number
   // the position filters for the corresponding characters
-  positions: FilterTypeAddPosition[]
+  positions: FilterTypeAddPosition
 }
 export interface FilterCharacterType {
   // Weather this filter is enabled or not
   enabled: boolean
   // The filter value
-  filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscardReplace | FilterCharacterTypeKeep | FilterCharacterTypeAdd
+  filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd
 }
 
 export interface FilterFunctionTypeV1 {
