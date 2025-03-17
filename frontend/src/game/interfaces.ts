@@ -171,6 +171,20 @@ export interface Options {
   spacebarBehaviour: SpacebarBehaviour
 }
 
+export interface CompactOptions {
+  // The type of generator to use to generate text
+  t: GeneratorType
+  // Number of words per lesson
+  w: number
+
+  // What to do when user enters the same character but with wrong case
+  c: CaseBehaviour
+  // What to do when user inputs wrong key entirely
+  e: ErrorBehaviour
+  // What to do when user presses spacebar at the wrong position
+  s: SpacebarBehaviour
+}
+
 export class GeneratorState {
   _state: number
   constructor(public id: GeneratorType) {
