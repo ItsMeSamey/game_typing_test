@@ -136,7 +136,7 @@ export function applyFilters(options: Options, words: string[]) {
       (filter as FilterCharacterTypeAdd).positions === FilterTypeAddPosition.StartOrEnd
       ?(s: string) => Math.random() > .5? (filter as FilterCharacterTypeAdd).add + s: s + (filter as FilterCharacterTypeAdd).add:
 
-      (s: string) => s
+      () => {throw new Error('Invalid FilterTypeAddPosition')}
     ;
 
     const transformWord: (s: string) => string =
@@ -179,7 +179,8 @@ export function applyFilters(options: Options, words: string[]) {
 
     words = words.flatMap(w => transformWord(w).split(' ').filter(s => s))
   }
-  
+
+  ;
   return words.join(' ')
 }
 
