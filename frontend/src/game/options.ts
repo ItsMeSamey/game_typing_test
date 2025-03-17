@@ -2,6 +2,7 @@
 
 import {
   CaseBehaviour,
+  CompactOptions,
   ErrorBehaviour,
   FilterCaseTypeEnum,
   FilterCaseTypePossibilityAdd,
@@ -17,7 +18,7 @@ import {
 } from './interfaces'
 import { LocalstorageStore } from '../utils/store'
 
-export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', {
+export const DefaultOptions = {
   type: GeneratorType.MarkovWord,
   wordCount: 16,
 
@@ -36,11 +37,34 @@ export const OptionsStore = new LocalstorageStore<Options>('game.typing.options'
   caseBehaviour: CaseBehaviour.Warn,
   errorBehaviour: ErrorBehaviour.Halt,
   spacebarBehaviour: SpacebarBehaviour.NoErrorOnWordStart,
-}, JSON.parse, JSON.stringify)
+}
 
-//export function BehaviourOptions(options: Options) {
-//  ;
-//}
+export function copactOptions(options: Options): CompactOptions {
+  return {
+    t: options.type,
+    w: options.wordCount,
+    c: options.caseBehaviour,
+    e: options.errorBehaviour,
+    s: options.spacebarBehaviour,
+  }
+}
+
+export function decompactOptions(compactOptions: CompactOptions): Options {
+  return {
+    type: compactOptions.t,
+    wordCount: compactOptions.w,
+
+    filterCase: DefaultOptions.filterCase,
+    filterCharacter: DefaultOptions.filterCharacter,
+    filterFunction: DefaultOptions.filterFunction,
+
+    caseBehaviour: compactOptions.c,
+    errorBehaviour: compactOptions.e,
+    spacebarBehaviour: compactOptions.s,
+  }
+}
+
+export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', DefaultOptions, JSON.parse, JSON.stringify)
 
 export function applyFilters(options: Options, words: string[]) {
   // Case filter
@@ -180,7 +204,7 @@ export function applyFilters(options: Options, words: string[]) {
     words = words.flatMap(w => transformWord(w).split(' ').filter(s => s))
   }
 
+  // Rest of the filters
   ;
   return words.join(' ')
 }
-
