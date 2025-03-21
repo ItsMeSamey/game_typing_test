@@ -2,7 +2,7 @@
 
 import { showError, showServerError } from '../utils/toast'
 import { getSite } from '../utils/networking'
-import { GeneratorState, GeneratorType, Options } from './interfaces'
+import { GeneratorState, GeneratorType, Options } from './types'
 import { applyFilters } from './options'
 
 // Split the string around the word
@@ -98,6 +98,6 @@ export async function fetchFromCache(options: Options) {
     words.push(...await getText(options.type, count - currentCount))
   }
 
-  return applyFilters(options, words)
+  return applyFilters(words)
 }
 

@@ -10,7 +10,7 @@ import {
   FilterCharacterTypeKeep,
   FilterTypeAddPosition,
   Options,
-} from './interfaces'
+} from './types'
 
 function applyFilters(options: Options, words: string[]) {
   // Case filter

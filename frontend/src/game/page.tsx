@@ -6,8 +6,8 @@ import { createMutable, createStore } from 'solid-js/store'
 import { Timer } from '../utils/timer'
 import { setPageError } from '../utils/navigation'
 import LoadingScreen from '../pages/loading_screen'
-import Keyboard from './keyboard'
-import { Options } from './interfaces'
+import Keyboard from './page_keyboard'
+import { Options } from './types'
 import { fetchFromCache, getText } from './networking'
 import { applyFilters, OptionsStore } from './options'
 
@@ -85,9 +85,9 @@ function TypingModel(options: Options) {
       const next = getText(options.type, options.wordCount)
       if (next instanceof Promise) {
         setText('')
-        next.then(words => setText(applyFilters(options, words))).catch(setPageError)
+        next.then(words => setText(applyFilters(words))).catch(setPageError)
       } else {
-        setText(applyFilters(options, next))
+        setText(applyFilters(next))
       }
     }
 

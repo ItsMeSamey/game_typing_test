@@ -9,8 +9,9 @@ import {
   GeneratorType,
   Options,
   SpacebarBehaviour
-} from './interfaces'
+} from './types'
 import { LocalstorageStore } from '../utils/store'
+import { MessageType } from './options_worker'
 
 export const DefaultOptions = {
   type: GeneratorType.MarkovWord,
@@ -58,5 +59,15 @@ export function decompactOptions(compactOptions: CompactOptions): Options {
   }
 }
 
-export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', DefaultOptions, JSON.parse, JSON.stringify)
+const worker = new Worker(new URL('./options_worker.ts', import.meta.url))
+
+export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', DefaultOptions, JSON.parse, (op: Options) => {
+  worker.postMessage({t: MessageType.SetOptions, v: op})
+  return JSON.stringify(op)
+})
+
+export function applyFilters(words: string[]): string {
+  worker.postMessage({t: MessageType.ProcessWords, v: words})
+  return words.join(' ')
+}
 
