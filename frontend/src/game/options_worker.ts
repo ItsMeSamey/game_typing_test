@@ -12,7 +12,7 @@ import {
   Options,
 } from './types'
 
-function applyFilters(options: Options, words: string[]) {
+function applyFilters(options: Options, words: string[]): string {
   // Case filter
   for (const filter of options.filterCase) {
     if (!filter.enabled) continue

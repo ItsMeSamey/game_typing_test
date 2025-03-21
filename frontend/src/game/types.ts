@@ -209,8 +209,8 @@ export class AsyncWorker {
     reject: (reason?: any) => void
   }[] = []
 
-  constructor(scriptURL: string) {
-    this.worker = new Worker(scriptURL);
+  constructor(scriptURL: string | URL, options?: WorkerOptions) {
+    this.worker = new Worker(scriptURL, options);
     this.worker.onmessage = (event: MessageEvent) => this.pendingRequests.shift()!.resolve(event.data)
     this.worker.onerror = (event: ErrorEvent) => this.pendingRequests.shift()!.reject(event)
   }

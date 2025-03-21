@@ -1,6 +1,7 @@
 'use strict'
 
 import {
+  AsyncWorker,
   CaseBehaviour,
   CompactOptions,
   ErrorBehaviour,
@@ -59,15 +60,25 @@ export function decompactOptions(compactOptions: CompactOptions): Options {
   }
 }
 
-const worker = new Worker(new URL('./options_worker.ts', import.meta.url))
-
 export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', DefaultOptions, JSON.parse, (op: Options) => {
   worker.postMessage({t: MessageType.SetOptions, v: op})
   return JSON.stringify(op)
 })
 
-export function applyFilters(words: string[]): string {
-  worker.postMessage({t: MessageType.ProcessWords, v: words})
-  return words.join(' ')
+let worker: AsyncWorker = undefined as any
+export function startWorker() {
+  if (worker) return
+  worker = new AsyncWorker(new URL('./options_worker.ts', import.meta.url))
+  worker.postMessage({t: MessageType.SetOptions, v: OptionsStore.get()!})
+}
+export function stopWorker() {
+  if (!worker) return
+  worker.terminate()
+  worker = undefined as any
+}
+
+export async function applyFilters(words: string[]): Promise<string> {
+  const result = await worker.postMessage({t: MessageType.ProcessWords, v: words})
+  return result.v.join(' ')
 }
 
