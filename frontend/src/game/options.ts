@@ -12,7 +12,7 @@ import {
   SpacebarBehaviour
 } from './types'
 import { LocalstorageStore } from '../utils/store'
-import { MessageType } from './options_worker'
+import { applyFiltersSync, MessageType } from './options_worker'
 
 export const DefaultOptions = {
   type: GeneratorType.MarkovWord,
@@ -60,12 +60,18 @@ export function decompactOptions(compactOptions: CompactOptions): Options {
   }
 }
 
+// undefined implies that the worker is 
+let worker: AsyncWorker | undefined = undefined
 export const OptionsStore = new LocalstorageStore<Options>('game.typing.options', DefaultOptions, JSON.parse, (op: Options) => {
-  worker.postMessage({t: MessageType.SetOptions, v: op})
+  if (op.filterFunction.filter(x => x.enabled).length === 0) {
+    if (worker) stopWorker()
+  } else {
+    if (!worker) startWorker()
+    worker!.postMessage({t: MessageType.SetOptions, v: op})
+  }
   return JSON.stringify(op)
 })
 
-let worker: AsyncWorker = undefined as any
 export function startWorker() {
   if (worker) return
   worker = new AsyncWorker(new URL('./options_worker.ts', import.meta.url))
@@ -73,12 +79,13 @@ export function startWorker() {
 }
 export function stopWorker() {
   if (!worker) return
-  worker.terminate()
+  worker.stop()
   worker = undefined as any
 }
 
-export async function applyFilters(words: string[]): Promise<string> {
-  const result = await worker.postMessage({t: MessageType.ProcessWords, v: words})
-  return result.v.join(' ')
+export function applyFilters(words: string[] | Promise<string[]>): string | Promise<string> {
+  if (worker) return (async() => worker.postMessage({t: MessageType.ProcessWords, v: await words}))()
+  if (words instanceof Promise) return (async() => applyFiltersSync(OptionsStore.get()!, await words))()
+  return applyFiltersSync(OptionsStore.get()!, words)
 }
 

@@ -209,6 +209,11 @@ export class AsyncWorker {
     reject: (reason?: any) => void
   }[] = []
 
+  // undefined means not stopping,
+  // true means stopping (this state can be recovered by setting this to true),
+  // false means stopped (this state can not be recovered)
+  stopping: boolean | undefined = undefined
+
   constructor(scriptURL: string | URL, options?: WorkerOptions) {
     this.worker = new Worker(scriptURL, options);
     this.worker.onmessage = (event: MessageEvent) => this.pendingRequests.shift()!.resolve(event.data)
@@ -216,26 +221,25 @@ export class AsyncWorker {
   }
 
   async postMessage(message: any, timeout: number = 1000): Promise<any> {
+    if (this.stopping !== undefined) throw new Error('Worker is stop' + (this.stopping === true? 'ping': 'ped'))
     const symbol = Symbol()
     let done = false
+
+    const complete = () => {
+      if (done) return
+      done = true
+      if (this.stopping === true && this.pendingRequests.length === 0) this.abort()
+    }
 
     return new Promise((res, rej) => {
       this.pendingRequests.push({
         symbol,
         resolve(value: any) {
-          if (done) {
-            console.warn(`Resolved after timeout: ${value}`)
-            return
-          }
-          done = true
-          res(value);
+          complete()
+          res(value)
         },
         reject(reason?: any) {
-          if (done) {
-            console.warn(`Rejected after timeout: ${reason}`)
-            return
-          }
-          done = true
+          complete()
           rej(reason)
         }
       })
@@ -243,7 +247,8 @@ export class AsyncWorker {
       setTimeout(() => {
         if (done) return
         this.pendingRequests = this.pendingRequests.filter(x => x.symbol !== symbol)
-        done = true
+
+        complete()
         rej(new Error('Timeout'))
       }, timeout)
        
@@ -251,10 +256,17 @@ export class AsyncWorker {
     });
   }
 
-  terminate(): void {
+  // Stop the worker gracefully
+  stop(): void {
+    this.stopping = true
+  }
+
+  // Kill this worker, throwing all pending promises
+  abort(): void {
     this.worker.terminate()
     for (const handles of this.pendingRequests) handles.reject(new Error('Worker terminated'))
     this.pendingRequests = []
+    this.stopping = false
   }
 }
 

@@ -12,7 +12,7 @@ import {
   Options,
 } from './types'
 
-function applyFilters(options: Options, words: string[]): string {
+export function applyFiltersSync(options: Options, words: string[]): string {
   // Case filter
   for (const filter of options.filterCase) {
     if (!filter.enabled) continue
@@ -151,7 +151,11 @@ function applyFilters(options: Options, words: string[]): string {
   }
 
   // Rest of the filters
-  ;
+  const filterFunctions = options.filterFunction.filter(x => x.enabled)
+  for (const filter of filterFunctions) {
+    ;
+  }
+
   return words.join(' ')
 }
 
@@ -175,7 +179,7 @@ onmessage = function(event: MessageEvent<MessageEventType>) {
   switch (event.data.t) {
     case MessageType.ProcessWords:
       if (options === undefined) throw new Error('Tried to process words before options were set')
-      postMessage(applyFilters(options, event.data.v))
+      postMessage(applyFiltersSync(options, event.data.v))
       break
     case MessageType.SetOptions:
       options = event.data.v
