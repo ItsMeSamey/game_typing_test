@@ -3,10 +3,12 @@
 import { For, onCleanup, onMount, createSignal, createEffect, Show, untrack, batch } from 'solid-js'
 import { createMutable, createStore } from 'solid-js/store'
 
+import { Settings } from './page_settings'
+import Keyboard from './page_keyboard'
+
 import { Timer } from '../utils/timer'
 import { setPageError } from '../utils/navigation'
 import LoadingScreen from '../pages/loading_screen'
-import Keyboard from './page_keyboard'
 import { Options } from './types'
 import { fetchFromCache, getText } from './networking'
 import { applyFilters, OptionsStore } from './options'
@@ -29,7 +31,7 @@ function getFontHeight() {
   return Math.max(height, 8)
 }
 
-function TypingModel(options: Options) {
+function TypingModel({options}: {options: Options}) {
   const [text, setTextRaw] = createSignal<string>('')
   const [characters, setCharacters] = createStore<State[]>(Array(text().length).fill(State.unreached))
   const [speed, setSpeed] = createSignal(0)
@@ -166,7 +168,13 @@ function TypingModel(options: Options) {
 
 export default function() {
   const options = createMutable<Options>(OptionsStore.get()!)
-  createEffect(() => OptionsStore.set({...options}))
-  return TypingModel(options)
+  createEffect(() => OptionsStore.set({...options}), OptionsStore.get()!, {render: true})
+
+  return <>
+    <nav class='flex flex-col p-2 ml-auto absolute align-middle items-end top-0 left-0 w-full'>
+      <Settings options={options} />
+    </nav>
+    <TypingModel options={options} />
+  </>
 }
 

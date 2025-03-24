@@ -3,8 +3,6 @@
 import { IDBPDatabase, openDB } from 'idb'
 import { Options } from './types'
 
-export type WordLength = 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20
-
 // IDK if indexgb compresses key names so shorter names are used here
 export interface HistoryEntry {
   t: number // Timestamp ms

@@ -11,25 +11,9 @@ import { untrack } from 'solid-js/web'
 import { Button } from '~/registry/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/registry/ui/tooltip'
 import { WordLength } from './history'
+import { Options } from './types'
 
-// Props that can be changed without a re-render
-export interface SettingsSoftProps {
-  // when this is set to true, latest word is revealed and then skipped
-  reveal: boolean
-  // weather fast invalidation is enabled
-  fastInvalidate: boolean
-}
-
-// Props that on change should trigger a re-render
-export interface SettingsHardProps {
-  // The length of the word
-  wordLength: WordLength
-
-  // Allow any word, even if not in dictionary
-  allowAny: boolean
-}
-
-export function Settings({soft, hard}: {soft: SettingsSoftProps, hard: SettingsHardProps}): JSX.Element {
+export function Settings({options}: {options: Options}): JSX.Element {
   const [open, setOpen] = createSignal(false)
 
   const emptydiv = <div class='w-full -mt-1 mb-1'/>
@@ -62,11 +46,11 @@ export function Settings({soft, hard}: {soft: SettingsSoftProps, hard: SettingsH
       </Show>
 
       <Slider
-        minValue={20}
-        maxValue={200}
-        defaultValue={untrack(() => [hard.wordLength])}
+        minValue={10}
+        maxValue={100}
+        defaultValue={untrack(() => [options.wordCount])}
         getValueLabel={(params) => <strong class='mr-1'>{params.values}</strong> as any}
-        onChange={([len]) => hard.wordLength = len as WordLength}
+        onChange={([len]) => options.wordCount = len}
         class='space-y-3 '
       >
         <div class='flex w-full justify-between'>
@@ -79,6 +63,7 @@ export function Settings({soft, hard}: {soft: SettingsSoftProps, hard: SettingsH
         </SliderTrack>
       </Slider>
 
+      {/*
       <Switch class='flex items-center space-x-2' onChange={allow => hard.allowAny = allow} defaultChecked={untrack(() => hard.allowAny)}>
         <SwitchControl>
           <SwitchThumb />
@@ -123,6 +108,7 @@ export function Settings({soft, hard}: {soft: SettingsSoftProps, hard: SettingsH
           Reveals and then skips the current word.
         </TooltipContent>
       </Tooltip>
+      */}
     </PopoverContent>
   </Popover>
 }
