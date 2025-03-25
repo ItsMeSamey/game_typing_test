@@ -146,7 +146,7 @@ export interface Options {
   // The type of generator to use to generate text
   type: GeneratorType  
   // Number of words per lesson
-  wordCount: number | [number, number]
+  wordCount: [number, number]
 
   // Note: The filters are applied in the order listed here
   //   `filterCase` first,

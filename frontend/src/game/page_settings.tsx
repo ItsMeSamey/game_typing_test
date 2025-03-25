@@ -91,11 +91,13 @@ export function Settings({options, signal}: {options: Options, signal: SettingsS
       </Show>
 
       <Slider
-        minValue={10}
-        maxValue={100}
-        defaultValue={untrack(() => [options.wordCount])}
-        getValueLabel={(params) => <strong class='mr-1'>{params.values}</strong> as any}
-        onChange={([len]) => options.wordCount = len}
+        minValue={2}
+        maxValue={200}
+        defaultValue={untrack(() => options.wordCount)}
+        getValueLabel={(params) => <strong class='mr-1'>
+          {params.values[0] !== params.values[1]? `${params.values[0]} ~ ${params.values[1]}`: params.values[0]}
+        </strong> as any}
+        onChange={(val) => options.wordCount = val as [number, number]}
         class='space-y-3 '
       >
         <div class='flex w-full justify-between'>
@@ -104,6 +106,7 @@ export function Settings({options, signal}: {options: Options, signal: SettingsS
         </div>
         <SliderTrack>
           <SliderFill />
+          <SliderThumb />
           <SliderThumb />
         </SliderTrack>
       </Slider>
