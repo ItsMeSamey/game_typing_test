@@ -49,13 +49,22 @@ class TypingText {
 
   state: TypingTextState
 
+  textCacheStore: LocalstorageStore<string>
+
   constructor(public options: Options, mock: boolean = false) {
     this.state = {
       text: '',
       characters: [],
       speed: 0,
     }
-    if (!mock) this.state = createMutable<TypingTextState>(this.state)
+
+    this.textCacheStore = undefined as any
+    if (mock) {
+      this.generatorType = options.type
+    } else {
+      this.state = createMutable<TypingTextState>(this.state)
+      createEffect(() => this.generatorType = this.options.type)
+    }
   }
 
   reset() {
@@ -89,6 +98,12 @@ class TypingText {
     }
     return true
   }
+
+  set generatorType(val: GeneratorType) {
+    this.textCacheStore = new LocalstorageStore<string>('game.typing.cache.small.' + val)
+    this.reset()
+    /*Init Text n stuff*/
+  }
 }
 
 class TextContainer {
@@ -99,12 +114,8 @@ class TextContainer {
 
   fontHeight: number = getFontHeight()
 
-  textCacheStore: LocalstorageStore<string>
-
   constructor(options: Options) {
-    this.textCacheStore = undefined as any
     this.text = new TypingText(options)
-    createEffect(() => this.generatorType = this.text.options.type)
 
     this.cursor = <div
       class={
@@ -157,12 +168,6 @@ class TextContainer {
       this.text.state.text = text
       this.reset()
     })
-  }
-
-  set generatorType(val: GeneratorType) {
-    this.textCacheStore = new LocalstorageStore<string>('game.typing.cache.small.' + val)
-    this.reset()
-    /*Init Text n stuff*/
   }
 
   complete() {
