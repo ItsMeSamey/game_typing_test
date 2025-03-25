@@ -14,6 +14,17 @@ export enum GeneratorType {
   MarkovWord = 4,
 }
 
+type FilterWrapper<T> = {
+  // Weather this filter is enabled or not
+  enabled: boolean
+  // The filter value
+  filter: T
+} |
+// When using this filter as a saperator for easy settings and user filters
+{ 
+  enabled: false
+}
+
 export enum FilterTypeAddPosition {
   Any = 0,
   Start = 1,
@@ -43,12 +54,7 @@ export interface FilterCaseTypePossibilityRemove {
   // the porobability that the character occurres anywhere inside the word
   possibility: number
 }
-export interface FilterCaseType {
-  // Weather this filter is enabled or not
-  enabled: boolean
-  // The filter value
-  filter: FilterCaseTypeEnum | FilterCaseTypePossibilityAdd | FilterCaseTypePossibilityRemove
-}
+export type FilterCaseType = FilterWrapper<FilterCaseTypeEnum | FilterCaseTypePossibilityAdd | FilterCaseTypePossibilityRemove>
 
 export enum FilterCharacterTypeEnum {
   // Dont filter anything
@@ -91,12 +97,7 @@ export interface FilterCharacterTypeAdd {
   // the position filters for the corresponding characters
   positions: FilterTypeAddPosition
 }
-export interface FilterCharacterType {
-  // Weather this filter is enabled or not
-  enabled: boolean
-  // The filter value
-  filter: FilterCharacterTypeEnum | FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd
-}
+export type FilterCharacterType = FilterWrapper<FilterCharacterTypeEnum | FilterCharacterTypeDiscard | FilterCharacterTypeKeep | FilterCharacterTypeAdd>
 
 export interface FilterFunctionTypeV1 {
   version: 1
@@ -105,12 +106,7 @@ export interface FilterFunctionTypeV1 {
   // @return string
   functionString: string
 }
-export interface FilterFunctionType {
-  // Weather this filter is enabled or not
-  enabled: boolean
-  // The filter value
-  filter: FilterFunctionTypeV1
-}
+export type FilterFunctionType = FilterWrapper<FilterFunctionTypeV1>
 
 export enum CaseBehaviour {
   // Ignore and skip
