@@ -12,8 +12,7 @@ import LoadingScreen from '../pages/loading_screen'
 import { GeneratorType, Options } from './types'
 import { fetchFromCache, getText } from './networking'
 import { applyFilters, OptionsStore } from './options'
-import { LocalstorageStore } from 'src/utils/store'
-import { text } from 'stream/consumers'
+import { LocalstorageStore } from '../utils/store'
 
 enum State {
   correct,
@@ -104,7 +103,7 @@ class TextContainer {
   }
 
   reset() {
-    this.text.reset
+    this.text.reset()
     this.setCursorPosition()
   }
 
@@ -157,15 +156,15 @@ class TextContainer {
 
     this.text.setSpeed(current)
     if (this.text.at === t.length) { // Completed this set
-      const current = 60*(t.split(' ').length) / elapsed
-      if (myBest() < current) setMyBest(current)
+      //const current = 60*(t.split(' ').length) / elapsed
+      //if (myBest() < current) setMyBest(current)
 
-      const next = getText(options.type, options.wordCount)
+      const next = applyFilters(getText(this.options.type, this.options.wordCount))
       if (next instanceof Promise) {
         this.setText('')
-        next.then(words => this.setText(applyFilters(words))).catch(setPageError)
+        next.then(words => this.setText(words)).catch(setPageError)
       } else {
-        this.setText(applyFilters(next))
+        this.setText(next)
       }
     }
 
@@ -174,34 +173,42 @@ class TextContainer {
 }
 
 function TypingModel({options, signal}: {options: Options, signal: SettingsSignal}) {
+  const container = new TextContainer(options)
   const [myBest, setMyBest] = createSignal<number>(0)
 
+  const handleKeyDown = container.handleKeyDown.bind(container)
+  const setCursorPosition = container.setCursorPosition.bind(container)
+
   onMount(() => {
-    fetchFromCache(options).then((v) => setText(v))
+    fetchFromCache(options).then((v) => container.setText(v))
     document.addEventListener('keydown', handleKeyDown)
     window.addEventListener('resize', setCursorPosition)
   })
 
   onCleanup(() => {
-    document.removeEventListener('keydown', handleKeyDown)
-    window.removeEventListener('resize', setCursorPosition)
+    document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('resize', setCursorPosition)
   })
 
-  return <Show when={text() !== ''} fallback={<LoadingScreen pageString='Loading Typing Test' />}>
-    <Cursor>
+  return <Show when={container.text.text() !== ''} fallback={<LoadingScreen pageString='Loading Typing Test' />}>
+    {container.cursor}
     <div class='flex flex-col items-center justify-center h-full p-6 motion-preset-fade object-scale-down'>
       <h1 class='text-2xl font-bold mb-4 max-sm:mb-2'>Typing Test</h1>
       <div class='max-w-3xl text-muted-foreground/75 pb-2 sm:mt-[-2rem] flex flex-row w-full'>
         Typing speed:
-        <span class='text-foreground/75 font-semibold motion-opacity-in motion-delay-250 px-1'> {characters[0] !== State.unreached? speed().toFixed(2): '?'} </span>
+        <span class='text-foreground/75 font-semibold motion-opacity-in motion-delay-250 px-1'>
+          {container.text.characters[0] !== State.unreached? container.text.speed().toFixed(2): '?'}
+        </span>
         WPM
         <div class='flex flex-row gap-4 font-semibold ml-auto'>
           <span class='text-green-500'>{myBest().toFixed(2)}</span>
         </div>
       </div>
-      <DivRef>
+      {container.divRef}
       <p class='text-muted-foreground/75'>Press Escape to reset.</p>
-      <p class={`text-muted-foreground/75 ${characters[0] !== State.unreached? 'motion-text-out-transparent': 'motion-text-in-transparent'}`}>Press any key to start typing!</p>
+      <p class={`text-muted-foreground/75 ${container.text.characters[0] !== State.unreached? 'motion-text-out-transparent': 'motion-text-in-transparent'}`}>
+        Press any key to start typing!
+      </p>
       <div class='flex mt-8 max-sm:hidden'>
         <Keyboard />
       </div>
@@ -225,7 +232,7 @@ export default function() {
     <nav class='flex flex-col p-2 ml-auto absolute align-middle items-end top-0 left-0 w-full'>
       <Settings options={options} signal={signal} />
     </nav>
-    <TypingModel options={options} />
+    <TypingModel options={options} signal={signal} />
   </>
 }
 
