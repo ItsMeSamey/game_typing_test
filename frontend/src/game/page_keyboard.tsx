@@ -50,7 +50,10 @@ export default function Keyboard(): JSX.Element {
   })
 
   return (
-    <svg class='text-xs tracking-tight motion-preset-slide-down motion-delay-100 motion-ease-out' x='15' y='15' width='598.5' height='198' overflow='visible' ref={keyboardRef}>
+    <svg
+      class='text-xs tracking-tight motion-preset-slide-down motion-delay-100 motion-ease-out select-none'
+      x='15' y='15' width='598.5' height='198' overflow='visible' ref={keyboardRef}
+    >
       <svg x='0' y='0' width='38' height='38' data-key='Backquote'>
         <rect class='fill-muted' x='0' y='0' width='38' height='38'></rect>
         <text class='fill-foreground' x='10' y='27' text-anchor='middle' dominant-baseline='middle' direction='ltr'>`</text>

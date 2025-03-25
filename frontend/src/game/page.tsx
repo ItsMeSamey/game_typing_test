@@ -1,7 +1,7 @@
 'use strict'
 
-import { For, onCleanup, onMount, createSignal, createEffect, Show, untrack, batch, on, Accessor, Setter } from 'solid-js'
-import { createMutable, createStore, SetStoreFunction } from 'solid-js/store'
+import { For, onCleanup, onMount, createEffect, Show, batch, on } from 'solid-js'
+import { createMutable  } from 'solid-js/store'
 
 import { Settings, SettingsSignal } from './page_settings'
 import Keyboard from './page_keyboard'
@@ -15,10 +15,13 @@ import { applyFilters, OptionsStore } from './options'
 import { LocalstorageStore } from '../utils/store'
 
 enum State {
-  correct,
   mistake,
+  warning,
+  correct,
+  corrected_mistake,
   unreached,
   unreached_mistake,
+  unreached_warning,
 }
 
 function getFontHeight() {
@@ -32,34 +35,64 @@ function getFontHeight() {
   return Math.max(height, 8)
 }
 
+interface TypingTextState {
+  text: string,
+  characters: ([string, State, number] | [string, State.unreached])[],
+  speed: number,
+}
+
 class TypingText {
   at: number = 0
   atWord: number = 0
   presses: [string, number][] = []
   timer: Timer = new Timer()
 
-  text: Accessor<string>
-  setTextRaw: Setter<string>
-  characters: State[]
-  setCharacters: SetStoreFunction<State[]>
-  speed: Accessor<number>
-  setSpeed: Setter<number>
+  state: TypingTextState
 
-  constructor() {
-    ;[this.text, this.setTextRaw] = createSignal<string>('')
-    ;[this.characters, this.setCharacters] = createStore<State[]>(Array(this.text().length).fill(State.unreached))
-    ;[this.speed, this.setSpeed] = createSignal<number>(0)
+  constructor(public options: Options, mock: boolean = false) {
+    this.state = {
+      text: '',
+      characters: [],
+      speed: 0,
+    }
+    if (!mock) this.state = createMutable<TypingTextState>(this.state)
   }
 
   reset() {
     this.atWord = this.at = 0
     this.presses = []
-    this.setCharacters({from: 0, to: untrack(this.text).length}, State.unreached)
+    this.state.characters = this.state.text.split('').map(c => [c, State.unreached])
+  }
+
+  handleKeyDown(key: string) {
+    if (key.length !== 1 || this.at >= this.state.text.length) return
+    if (this.presses.length === 0) this.timer.reset()
+    this.presses.push([key.toLowerCase(), this.timer.elapsed/1000])
+
+    if (this.presses.length === 0) this.timer.reset()
+    if (!this.processKey(key)) return
+
+    const elapsed = this.timer.elapsed/1000
+    this.presses.push([key.toLowerCase(), elapsed])
+
+    this.state.speed = 60*this.atWord/elapsed
+  }
+
+  processKey(key: string): boolean {
+    if (this.state.text[this.at] === key) {
+      //TODO: implement options parsing
+      this.state.characters[this.at][1] = this.state.characters[this.at][1] === State.unreached_mistake? State.mistake: State.correct
+      if (key === ' ') this.atWord += 1
+      this.at += 1
+    } else {
+      this.state.characters[this.at][1] = State.unreached_mistake
+    }
+    return true
   }
 }
 
 class TextContainer {
-  text: TypingText = new TypingText()
+  text: TypingText
 
   cursor: HTMLDivElement
   divRef: HTMLDivElement
@@ -68,14 +101,15 @@ class TextContainer {
 
   textCacheStore: LocalstorageStore<string>
 
-  constructor(public options: Options) {
+  constructor(options: Options) {
     this.textCacheStore = undefined as any
-    createEffect(() => this.generatorType = this.options.type)
+    this.text = new TypingText(options)
+    createEffect(() => this.generatorType = this.text.options.type)
 
     this.cursor = <div
       class={
         'absolute transition-transform z-50 top-0 left-0 backdrop-invert will-change-transform ' +
-        (this.text.characters[0] !== State.unreached? 'block': 'hidden')
+        (this.text.state.text && this.text.state.characters[0][1] !== State.unreached? 'block': 'hidden')
       }
       style={{
         'height': `1em`,
@@ -85,17 +119,17 @@ class TextContainer {
     /> as HTMLDivElement
 
     this.divRef = <div class='max-w-3xl select-none text-lg mb-4 motion-translate-y-in tracking-widest max-h-1/2 overflow-y-scroll font-mono'>
-      <For each={this.text.text() as unknown as string[]}>
-        {(key, i) => (
+      <For each={this.text.state.characters}>
+        {e => (
           <span
             class={`font-semibold motion-delay-500 tracking-wider ${
-              this.text.characters[i()] === State.correct ? 'text-green-500' :
-              this.text.characters[i()] === State.mistake ? 'text-red-500 underline' :
-              this.text.characters[i()] === State.unreached_mistake ? 'text-foreground/75' :
+              e[1] === State.correct ? 'text-green-500' :
+              e[1] === State.mistake ? 'text-red-500 underline' :
+              e[1] === State.unreached_mistake ? 'text-foreground/75' :
               'text-foreground/90'
             }`}
           >
-            {key === ' '? <span class={'break-words ' + (this.text.characters[i()] !== State.mistake? 'opacity-50': '')}>•</span>: key}
+            {e[0] === ' '? <span class={'break-words ' + (e[1] !== State.mistake? 'opacity-50': '')}>•</span>: e[0]}
           </span>
         )}
       </For>
@@ -120,7 +154,7 @@ class TextContainer {
 
   setText(text: string) {
     batch(() => {
-      this.text.setTextRaw(text)
+      this.text.state.text = text
       this.reset()
     })
   }
@@ -137,29 +171,10 @@ class TextContainer {
 
   handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Escape') return this.reset()
-    const t = untrack(this.text.text)
-    if (e.key.length !== 1 || this.text.at >= t.length) return
+    this.text.handleKeyDown(e.key)
 
-    if (t[this.text.at] === e.key) {
-      e.preventDefault()
-      this.text.setCharacters(this.text.at, (old) => old === State.unreached_mistake? State.mistake: State.correct)
-      if (e.key === ' ') this.text.atWord += 1
-      if (this.text.at === 0) this.text.timer.reset()
-      this.text.at += 1
-    } else {
-      this.text.setCharacters(this.text.at, _ => State.unreached_mistake)
-    }
-
-    const elapsed = this.text.timer.elapsed/1000
-    this.text.presses.push([e.key.toLowerCase(), elapsed])
-    const current = 60*this.text.atWord/elapsed
-
-    this.text.setSpeed(current)
-    if (this.text.at === t.length) { // Completed this set
-      //const current = 60*(t.split(' ').length) / elapsed
-      //if (myBest() < current) setMyBest(current)
-
-      const next = applyFilters(getText(this.options.type, this.options.wordCount))
+    if (this.text.at === this.text.state.text.length) { // Completed this set
+      const next = applyFilters(getText(this.text.options.type, this.text.options.wordCount))
       if (next instanceof Promise) {
         this.setText('')
         next.then(words => this.setText(words)).catch(setPageError)
@@ -174,7 +189,6 @@ class TextContainer {
 
 function TypingModel({options, signal}: {options: Options, signal: SettingsSignal}) {
   const container = new TextContainer(options)
-  const [myBest, setMyBest] = createSignal<number>(0)
 
   const handleKeyDown = container.handleKeyDown.bind(container)
   const setCursorPosition = container.setCursorPosition.bind(container)
@@ -190,23 +204,23 @@ function TypingModel({options, signal}: {options: Options, signal: SettingsSigna
     window.addEventListener('resize', setCursorPosition)
   })
 
-  return <Show when={container.text.text() !== ''} fallback={<LoadingScreen pageString='Loading Typing Test' />}>
+  return <Show when={container.text.state.text} fallback={<LoadingScreen pageString='Loading Typing Test' />}>
     {container.cursor}
     <div class='flex flex-col items-center justify-center h-full p-6 motion-preset-fade object-scale-down'>
       <h1 class='text-2xl font-bold mb-4 max-sm:mb-2'>Typing Test</h1>
       <div class='max-w-3xl text-muted-foreground/75 pb-2 sm:mt-[-2rem] flex flex-row w-full'>
         Typing speed:
         <span class='text-foreground/75 font-semibold motion-opacity-in motion-delay-250 px-1'>
-          {container.text.characters[0] !== State.unreached? container.text.speed().toFixed(2): '?'}
+          {container.text.state.text && container.text.state.characters[0][1] !== State.unreached? container.text.state.speed.toFixed(2): '?'}
         </span>
         WPM
         <div class='flex flex-row gap-4 font-semibold ml-auto'>
-          <span class='text-green-500'>{myBest().toFixed(2)}</span>
+          <span class='text-green-500'>{container.text.state.speed.toFixed(2)}</span>
         </div>
       </div>
       {container.divRef}
       <p class='text-muted-foreground/75'>Press Escape to reset.</p>
-      <p class={`text-muted-foreground/75 ${container.text.characters[0] !== State.unreached? 'motion-text-out-transparent': 'motion-text-in-transparent'}`}>
+      <p class={`text-muted-foreground/75 ${container.text.state.text && container.text.state.characters[0][1] !== State.unreached? 'motion-text-out-transparent': 'motion-text-in-transparent'}`}>
         Press any key to start typing!
       </p>
       <div class='flex mt-8 max-sm:hidden'>
