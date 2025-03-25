@@ -23,6 +23,7 @@ type FilterWrapper<T> = {
 // When using this filter as a saperator for easy settings and user filters
 { 
   enabled: false
+  filter: undefined
 }
 
 export enum FilterTypeAddPosition {

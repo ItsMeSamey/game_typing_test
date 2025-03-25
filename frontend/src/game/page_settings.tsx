@@ -10,10 +10,55 @@ import { Switch, SwitchControl, SwitchLabel, SwitchThumb } from '~/registry/ui/s
 import { untrack } from 'solid-js/web'
 import { Button } from '~/registry/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/registry/ui/tooltip'
-import { WordLength } from './history'
-import { Options } from './types'
+import { FilterCaseTypeEnum, FilterCharacterTypeEnum, Options } from './types'
 
-export function Settings({options}: {options: Options}): JSX.Element {
+export interface SettingsSignal {
+  skip: boolean
+  refilter: boolean
+}
+
+export function Settings({options, signal}: {options: Options, signal: SettingsSignal}): JSX.Element {
+  function easySetFilterCase(enabled: boolean) {
+    const lastIdx = options.filterCase.length - 1
+    if (enabled) {
+      if (options.filterCase.length === 0 || options.filterCase[lastIdx].filter !== FilterCaseTypeEnum.AllLower) {
+        options.filterCase.push({
+          enabled: true,
+          filter: FilterCaseTypeEnum.AllLower,
+        })
+      } else {
+        options.filterCase[lastIdx].enabled = true
+      }
+    } else if (options.filterCase.length && options.filterCase[lastIdx].filter === FilterCaseTypeEnum.AllLower) {
+      options.filterCase[lastIdx].enabled = false
+    }
+    signal.refilter = true
+  }
+  function easySetFilterCharacter(enabled: boolean, filter: FilterCharacterTypeEnum.Numbers | FilterCharacterTypeEnum.SpecialChars) {
+    const lastIdx = options.filterCase.length - 1
+    if (options.filterCharacter.length === 0 || typeof options.filterCharacter[lastIdx].filter !== 'number') {
+      if (enabled) options.filterCharacter.push({enabled, filter})
+    } else if (options.filterCharacter[lastIdx].filter === filter || options.filterCharacter[lastIdx].filter === FilterCharacterTypeEnum.None) {
+      options.filterCharacter[lastIdx].enabled = enabled
+      options.filterCharacter[lastIdx].filter = filter
+    } else if (options.filterCharacter[lastIdx].filter === FilterCharacterTypeEnum.NumberAndSpecialChars) {
+      if (options.filterCharacter[lastIdx].enabled === false) {
+        options.filterCharacter[lastIdx].enabled = enabled
+        options.filterCharacter[lastIdx].filter = filter
+      } else if (!enabled) {
+        options.filterCharacter[lastIdx].filter ^= filter
+      }
+    } else {
+      if (options.filterCharacter[lastIdx].enabled === true) {
+        options.filterCharacter[lastIdx].filter |= filter
+      } else {
+        options.filterCharacter[lastIdx].enabled = true
+        options.filterCharacter[lastIdx].filter = filter
+      }
+    }
+    signal.refilter = true
+  }
+
   const [open, setOpen] = createSignal(false)
 
   const emptydiv = <div class='w-full -mt-1 mb-1'/>
@@ -63,8 +108,15 @@ export function Settings({options}: {options: Options}): JSX.Element {
         </SliderTrack>
       </Slider>
 
-      {/*
-      <Switch class='flex items-center space-x-2' onChange={allow => hard.allowAny = allow} defaultChecked={untrack(() => hard.allowAny)}>
+      <Switch
+        class='flex items-center space-x-2'
+        onChange={allow => easySetFilterCase(allow)}
+        defaultChecked={
+          options.filterCase.length !== 0 &&
+          options.filterCase.at(-1)!.filter === FilterCaseTypeEnum.AllLower &&
+          options.filterCase.at(-1)!.enabled
+        }
+      >
         <SwitchControl>
           <SwitchThumb />
         </SwitchControl>
@@ -72,16 +124,25 @@ export function Settings({options}: {options: Options}): JSX.Element {
         <SwitchLabel class='ml-auto text-md'>
           <Tooltip>
             <TooltipTrigger>
-              Allow Any Word
+              Normalize Case
             </TooltipTrigger>
             <TooltipContent>
-              Allow any word to be used, even if not in the database.
+              Lower case all the words
             </TooltipContent>
           </Tooltip>
         </SwitchLabel>
       </Switch>
 
-      <Switch class='flex items-center space-x-2' onChange={allow => soft.fastInvalidate = allow} defaultChecked={untrack(() => soft.fastInvalidate)}>
+      <Switch
+        class='flex items-center space-x-2'
+        onChange={allow => easySetFilterCharacter(allow, FilterCharacterTypeEnum.Numbers)}
+        defaultChecked={
+          options.filterCharacter.length !== 0 &&
+          typeof options.filterCharacter.at(-1)!.filter === 'number' &&
+          options.filterCharacter.at(-1)!.enabled &&
+          ((options.filterCharacter.at(-1)!.filter as FilterCharacterTypeEnum) & FilterCharacterTypeEnum.Numbers) === FilterCharacterTypeEnum.Numbers
+        }
+      >
         <SwitchControl>
           <SwitchThumb />
         </SwitchControl>
@@ -89,10 +150,36 @@ export function Settings({options}: {options: Options}): JSX.Element {
         <SwitchLabel class='ml-auto text-md'>
           <Tooltip>
             <TooltipTrigger>
-              Fast Invalidate
+              Filter Numbers
             </TooltipTrigger>
             <TooltipContent>
-              Fast invalidation of incorrect input (for words that are not in db).
+              Filter out all numbers in the text
+            </TooltipContent>
+          </Tooltip>
+        </SwitchLabel>
+      </Switch>
+
+      <Switch
+        class='flex items-center space-x-2'
+        onChange={allow => easySetFilterCharacter(allow, FilterCharacterTypeEnum.SpecialChars)}
+        defaultChecked={
+          options.filterCharacter.length !== 0 &&
+          typeof options.filterCharacter.at(-1)!.filter === 'number' &&
+          options.filterCharacter.at(-1)!.enabled &&
+          ((options.filterCharacter.at(-1)!.filter as FilterCharacterTypeEnum) & FilterCharacterTypeEnum.SpecialChars) === FilterCharacterTypeEnum.SpecialChars
+        }
+      >
+        <SwitchControl>
+          <SwitchThumb />
+        </SwitchControl>
+
+        <SwitchLabel class='ml-auto text-md'>
+          <Tooltip>
+            <TooltipTrigger>
+              Filter Special
+            </TooltipTrigger>
+            <TooltipContent>
+              Filter out all special characters in the text
             </TooltipContent>
           </Tooltip>
         </SwitchLabel>
@@ -100,15 +187,14 @@ export function Settings({options}: {options: Options}): JSX.Element {
 
       <Tooltip>
         <TooltipTrigger>
-          <Button class='bg-warning text-warning-foreground hover:bg-warning-foreground hover:text-warning transition-colors duration-300' onClick={() => soft.reveal = true}>
-            Reveal
+          <Button class='bg-warning text-warning-foreground hover:bg-warning-foreground hover:text-warning transition-colors duration-300' onClick={() => signal.skip = true}>
+            Skip
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          Reveals and then skips the current word.
+          Skip the text that is currently being shown
         </TooltipContent>
       </Tooltip>
-      */}
     </PopoverContent>
   </Popover>
 }
