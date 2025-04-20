@@ -123,7 +123,7 @@ class TextContainer {
         (this.text.state.text && this.text.state.characters[0][1] !== State.unreached? 'block': 'hidden')
       }
       style={{
-        'height': `1em`,
+        'height': `1.5rem`,
         'width': '1.1px',
         'transform': `translate(50vw, 50vh)`,
       }}

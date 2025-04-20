@@ -171,8 +171,10 @@ export interface Options {
 export interface CompactOptions {
   // The type of generator to use to generate text
   t: GeneratorType
-  // Number of words per lesson
+  // Minimum number of words per lesson
   w: number
+  // Maximum number of words per lesson
+  W: number
 
   // What to do when user enters the same character but with wrong case
   c: CaseBehaviour

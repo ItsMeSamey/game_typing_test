@@ -14,9 +14,9 @@ import {
 import { LocalstorageStore } from '../utils/store'
 import { applyFiltersSync, MessageType } from './options_worker'
 
-export const DefaultOptions = {
+export const DefaultOptions: Options = {
   type: GeneratorType.MarkovWord,
-  wordCount: 16,
+  wordCount: [16, 32],
 
   filterCase: [{
     enabled: true,
@@ -38,7 +38,8 @@ export const DefaultOptions = {
 export function compactOptions(options: Options): CompactOptions {
   return {
     t: options.type,
-    w: options.wordCount,
+    w: options.wordCount[0],
+    W: options.wordCount[1],
     c: options.caseBehaviour,
     e: options.errorBehaviour,
     s: options.spacebarBehaviour,
@@ -48,7 +49,7 @@ export function compactOptions(options: Options): CompactOptions {
 export function decompactOptions(compactOptions: CompactOptions): Options {
   return {
     type: compactOptions.t,
-    wordCount: compactOptions.w,
+    wordCount: [compactOptions.w, compactOptions.W],
 
     filterCase: DefaultOptions.filterCase,
     filterCharacter: DefaultOptions.filterCharacter,

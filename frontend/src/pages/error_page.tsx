@@ -60,6 +60,7 @@ function SwingingLight(err: any, reset: () => void): JSX.Element {
 }
 
 export default function ErrorPage(err: any, reset: () => void): JSX.Element {
+  console.error(err)
   return SwingingLight(err, reset)
 }
 
