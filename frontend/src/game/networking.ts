@@ -51,8 +51,8 @@ async function fulfillCache(id: GeneratorType, state: GeneratorState, currentCac
 }
 
 // This makes it so that we dont have to go to loading screen when fetching next text synchronously
-export function getText(id: GeneratorType, range: [number, number]): string[] | Promise<string[]> {
-  const count = range[0] + Math.random() * (range[1] - range[0])
+export function getText(id: GeneratorType, range: [number, number], setcache: boolean = true): string[] | Promise<string[]> {
+  const count = Math.round(range[0] + Math.random() * (range[1] - range[0]))
   // MAX(uint32) causes the generator to reroll to a random value
   if (count > (1 << 16)) throw new Error(`Invalid count: ${count} is grater than maximum allowed (${(1 << 16) - 1})`)
   let cache = localStorage.getItem('game.typing.textcache.' + id)!
@@ -62,6 +62,7 @@ export function getText(id: GeneratorType, range: [number, number]): string[] | 
     const [retval, ncache] = splitWordString(cache, count)
     if (retval.length == count) {
       fulfillCache(id, state, ncache)
+      if (setcache) localStorage.setItem('game.typing.current.' + id, retval.join(' '))
       return retval
     }
   }
@@ -77,6 +78,7 @@ export function getText(id: GeneratorType, range: [number, number]): string[] | 
     })
 
     fulfillCache(id, state, ncache)
+    if (setcache) localStorage.setItem('game.typing.current.' + id, retval.join(' '))
     return retval
   }
   
@@ -85,7 +87,7 @@ export function getText(id: GeneratorType, range: [number, number]): string[] | 
 
 export async function fetchFromCache(options: Options) {
   let localCache = localStorage.getItem('game.typing.current.' + options.type)
-  localCache = localCache? localCache + ' ': ''
+  localCache ??= ''
 
   const [count_min, count_max] = options.wordCount
   let words = localCache? localCache.split(' ').filter(x => x): []
@@ -93,12 +95,16 @@ export async function fetchFromCache(options: Options) {
 
   if (currentCount > count_max) {
     const keyName = 'game.typing.textcache.' + options.type
-    const count = count_min + Math.random() * (count_max - count_min)
+    const count = Math.round(count_min + Math.random() * (count_max - count_min))
     localStorage.setItem(keyName, words.slice(count).join(' ') + ' ' + localStorage.getItem(keyName))
     words = words.slice(0, count)
   } else if (currentCount < count_min) {
-    words.push(...await getText(options.type, [count_min - currentCount, count_max - currentCount]))
+    words.push(...await getText(options.type, [count_min - currentCount, count_max - currentCount], false))
+  } else {
+    return applyFilters(words)
   }
+
+  localStorage.setItem('game.typing.current.' + options.type, words.join(' '))
 
   return applyFilters(words)
 }
