@@ -231,14 +231,6 @@ func extractZigUnix(filePath, binPath, libPath, binName string) {
   }
 }
 
-// return true if the command exists
-func commandExists(cmd string) bool {
-  _, err := exec.LookPath(cmd)
-  // we dont care if its permission / notfound / isadir etc. errors
-  // because if this errors, the command effectively does not exist
-  return err == nil
-}
-
 func mustGetEnv(key string) string {
   value, ok := os.LookupEnv(key)
   if !ok {
@@ -250,16 +242,16 @@ func mustGetEnv(key string) string {
 func installZig() (runCommand string) {
   fmt.Println("Installing Zig")
 
-  exists := commandExists("zig")
-  if (exists) {
-    version, err := exec.Command("zig", "version").Output()
-    if (err == nil) {
-      ver := strings.SplitN(string(version), ".", 3)
-      if (ver[0] == "0" && ver[1] == "14") {
-        fmt.Println("zig 0.14 is already installed on the system")
-        return "zig"
-      }
+  version, err := exec.Command("zig", "version").Output()
+  if (err == nil) {
+    ver := strings.SplitN(string(version), ".", 3)
+    if (ver[0] == "0" && ver[1] == "14") {
+      fmt.Println("zig 0.14 is already installed on the system")
+      return "zig"
     }
+  } else {
+    fmt.Println("Error checking zig version: " + err.Error())
+    fmt.Println("Installing Zig")
   }
 
   var goOs = func() int {
@@ -360,7 +352,6 @@ func main() {
   fmt.Println("In Dir", cwd)
 
   var zigCommand string = ""
-
 
   _, err = os.Stat("libgen.a")
   if err == nil || !os.IsNotExist(err) {
